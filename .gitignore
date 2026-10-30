@@ -1,0 +1,30 @@
+# Build output (CMake)
+build/
+cmake-build-*/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ROS 2 (colcon)
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# Firmware artifacts outside build/
+*.elf
+*.bin
+*.hex
+*.map
+
+# Logic analyzer raw captures (export CSVs to docs/results/ instead)
+*.sal
+
+# Editors / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/

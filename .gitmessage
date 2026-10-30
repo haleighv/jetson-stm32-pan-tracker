@@ -1,0 +1,35 @@
+# <type>(<scope>): <imperative summary, ≤72 chars, no period>
+#
+# Types:
+#   feat      new capability (e.g. new CAN frame, new node)
+#   fix       bug fix
+#   docs      documentation only
+#   test      add/change tests, no production code change
+#   refactor  restructure without changing behavior
+#   perf      performance (e.g. move control ISR to ITCM)
+#   build     build system/deps (CMake, toolchain, CubeMX regen)
+#   ci        GitHub Actions
+#   chore     housekeeping (.gitignore, file moves)
+#
+# Scopes:
+#   fw        STM32 firmware (sub-scopes ok: fw/pid, fw/can)
+#   ros       Jetson ROS 2 packages
+#   can       protocol spec, or changes touching both ends
+#   tools     analysis scripts
+#   hw        wiring, BOM, mechanical
+#   docs      design docs, guides, README
+#
+# Example: fix(fw/can): drop frames with stale rolling counter
+# Trivial change? Subject line only; delete the sections below.
+#
+# Body: wrap at 72. Explain what and why, not how.
+
+Problem:
+
+Solution:
+
+Testing:
+
+# Trailers (optional, one per line, no blank lines between):
+#   Refs: #12     links the issue
+#   Fixes: #12    closes the issue when merged to default branch
