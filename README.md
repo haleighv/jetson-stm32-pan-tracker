@@ -27,7 +27,7 @@ Coming soon
 ## Architecture (planned)
 ```mermaid
 flowchart LR
-  subgraph J[Jetson Orin Nano · JetPack 6.2 · ROS 2 Humble]
+  subgraph J[Jetson Orin Nano · JetPack 7.2.1 · ROS 2 Jazzy]
     CAM[camera node<br/>IMX219 720p60] --> TAG[apriltag node]
     TAG --> TRK[tracker node<br/>outer loop 60 Hz]
     TRK --> BR[can_bridge<br/>SocketCAN]
