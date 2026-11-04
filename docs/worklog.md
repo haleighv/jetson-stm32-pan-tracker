@@ -19,15 +19,27 @@ Nucleo bring-up:
 - Builds and flashes from the command line: `./firmware/scripts/build_nucleo.sh` and `./firmware/scripts/flash.sh` (STM32_Programmer_CLI over SWD).
 - LD1 blinking at 1 Hz from a FreeRTOS task. Scheduler, clocks, and GPIO working.
 
+Firmware foundation (logging, tasks, CLI):
+- Reordered: logging and a CLI before the control tick and jitter capture, so testing and iterating is faster
+- Task table in `app/task_init.c`. CubeMX's default task is repurposed as `init`: it sets up logging, creates every task in the table, then deletes itself. Dynamic allocation (heap_4, 48 KB), but only at boot.
+- FreeRTOS: newlib reentrant on, stack overflow check 2 (hook turns LD3 on and halts)
+- Logging (`app/log.h`): `LOG_E/W/I/D` with a per-file tag, `[   12.345] I cli: msg`. Formats into a fixed 128-byte message and queues it without blocking; full queue drops and counts. The log task is the only owner of the sinks: UART now, flash and UDP later. Global level filter before formatting, per-sink level after.
+- printf retargeted to USART3, only for boot and fault messages.
+- CLI: parser and line editing in `firmware/lib/cli.c` (no HAL/RTOS, host-tested), board commands in `app/cli_cmds.c`. USART3 RX interrupt (priority 6) -> stream buffer -> CLI task. Output goes through the log task so only one thing writes the UART.
+- CLI commands: `?` (alphabetical), `heap`, `led`, `loglevel`, `reset`, `tasks`, `uptime`, `version`. Up/down arrows recall the last 2 lines.
+- 17 host tests for the CLI (line editing, CRLF, escape sequences, arg limits, help order, history). PID tests still 7/7.
+- Versioning: semver in `project(... VERSION 0.1.0)`, plus `git describe --tags --always --dirty`, written to a generated `version.h` in the build folder. Shown in the boot banner and `version`.
+
 PID references:
 - Brett Beauregard, [Improving the Beginner's PID](http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/) (derivative kick, tuning changes, reset windup)
 - Tim Wescott, [PID Without a PhD](https://www.wescottdesign.com/articles/pid/pidWithoutAPhd.pdf)
 - Åström & Murray, [Feedback Systems](https://fbsbook.org), ch. 11 PID Control (free online)
 
 Saved for next time:
-- Move the blink into `app/`, blink LD2 from the TIM6 1 kHz tick
-- UART logging, scope pin + jitter capture
-- Fill in `docs/firmware-architecture.md`
+- Tag v0.1.0
+- Supervisor task (state machine skeleton, status LED)
+- Start TIM6, scope pin on PG14 + jitter capture (idle and loaded)
+- Fill in the TBDs in `docs/firmware-architecture.md`
 - SSH key login
 - Check for MAXN SUPER
 
