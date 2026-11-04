@@ -24,11 +24,12 @@
 #
 # Body: wrap at 72. Explain what and why, not how.
 
-Problem:
 
-Solution:
+[Problem]
 
-Testing:
+[Solution]
+
+[Testing]
 
 # Trailers (optional, one per line, no blank lines between):
 #   Refs: #12     links the issue
