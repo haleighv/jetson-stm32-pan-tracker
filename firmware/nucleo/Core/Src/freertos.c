@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "task_init.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,11 +48,11 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 128 * 4,
+/* Definitions for init */
+osThreadId_t initHandle;
+const osThreadAttr_t init_attributes = {
+  .name = "init",
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -61,9 +61,27 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
+void task_init(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* Hook prototypes */
+void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName);
+
+/* USER CODE BEGIN 4 */
+void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName)
+{
+  /* A task overran its stack (configCHECK_FOR_STACK_OVERFLOW = 2). Memory
+   * is already corrupt, so don't log: LD3 on and halt for the debugger.
+   * pcTaskName says which task. */
+  (void)xTask;
+  (void)pcTaskName;
+  __disable_irq();
+  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+  for (;;) {
+  }
+}
+/* USER CODE END 4 */
 
 /**
   * @brief  FreeRTOS initialization
@@ -92,11 +110,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* creation of init */
+  initHandle = osThreadNew(task_init, NULL, &init_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  /* tasks are created by the init task (app/task_init.c) */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -105,26 +123,23 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_task_init */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the init thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_task_init */
+void task_init(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN task_init */
+  task_init_run(argument);
   /* Infinite loop */
   for(;;)
   {
-    for(;;)
-    {
-      HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-      osDelay(500);
-    }
+    osDelay(1);
   }
-  /* USER CODE END StartDefaultTask */
+  /* USER CODE END task_init */
 }
 
 /* Private application code --------------------------------------------------*/

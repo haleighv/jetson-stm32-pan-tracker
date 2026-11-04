@@ -21,11 +21,12 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,8 +96,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM6_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  printf("| ------------ BOOT ------------ |\r\n");
   /* USER CODE END 2 */
 
   /* Init scheduler */
