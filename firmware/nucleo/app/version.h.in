@@ -1,0 +1,21 @@
+/*
+ * version.h (generated from app/version.h.in by CMake, don't edit)
+ *
+ * Firmware version. Bump VERSION in firmware/nucleo/CMakeLists.txt
+ * project(), and tag releases: git tag v0.1.0
+ *
+ * Author: Haleigh (haleighv)
+ * Copyright (c) 2026 haleighv
+ * SPDX-License-Identifier: MIT
+ */
+#ifndef VERSION_H
+#define VERSION_H
+
+#define FW_VERSION_MAJOR    @PROJECT_VERSION_MAJOR@
+#define FW_VERSION_MINOR    @PROJECT_VERSION_MINOR@
+#define FW_VERSION_PATCH    @PROJECT_VERSION_PATCH@
+#define FW_VERSION_STR      "@PROJECT_VERSION@"         /* "0.1.0" */
+#define FW_GIT_DESCRIBE     "@GIT_DESCRIBE@"            /* "v0.1.0-3-gabc1234-dirty" */
+#define FW_BUILD_TYPE       "@CMAKE_BUILD_TYPE@"        /* "Debug" / "Release" */
+
+#endif /* VERSION_H */

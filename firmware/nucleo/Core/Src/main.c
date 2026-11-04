@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "version.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,7 +99,7 @@ int main(void)
   MX_TIM6_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  printf("| ------------ BOOT ------------ |\r\n");
+  printf("| ---- BOOT %s (%s) %s ---- |\r\n", FW_VERSION_STR, FW_GIT_DESCRIBE, FW_BUILD_TYPE);
   /* USER CODE END 2 */
 
   /* Init scheduler */

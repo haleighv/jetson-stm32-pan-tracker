@@ -23,8 +23,9 @@
 #include "queue.h"
 #include "semphr.h"
 
-/* Special level value for the flush marker. Never a real message level. */
-#define LOG_LVL_FLUSH   LOG_LVL_COUNT
+/* Special level values. Never real message levels. */
+#define LOG_LVL_FLUSH   (LOG_LVL_COUNT)         /* flush marker */
+#define LOG_LVL_CONSOLE (LOG_LVL_COUNT + 1)     /* raw console text */
 
 /* One queue item. Copied in by value, so the caller's stack buffer can go
  * away as soon as log_write() returns. */
@@ -82,8 +83,9 @@ log_sink_t *log_sink_find(const char *name)
 }
 
 /* Log task only. Runs a sink's init() the first time it's used, so sinks
- * registered late (udp, once the link is up) get initialized too. */
-static void sinks_write(log_level_t lvl, const char *msg, size_t len)
+ * registered late (udp, once the link is up) get initialized too.
+ * lvl may be LOG_LVL_CONSOLE: only console sinks get those. */
+static void sinks_write(uint8_t lvl, const char *msg, size_t len)
 {
     for (uint8_t i = 0; i < sink_count; i++) {
         log_sink_t *s = sinks[i];
@@ -94,7 +96,10 @@ static void sinks_write(log_level_t lvl, const char *msg, size_t len)
                 s->enabled = false;
             }
         }
-        if (s->enabled && lvl <= s->min_level) {
+        if (!s->enabled) {
+            continue;
+        }
+        if (lvl == LOG_LVL_CONSOLE ? s->console : (lvl <= (uint8_t)s->min_level)) {
             s->write(msg, len);
         }
     }
@@ -189,6 +194,34 @@ void log_write(log_level_t lvl, const char *tag, const char *fmt, ...)
     }
 }
 
+void log_console(const char *s, size_t len)
+{
+    configASSERT(!xPortIsInsideInterrupt());
+
+    if (log_queue == NULL) {
+        printf("%.*s", (int)len, s);
+        return;
+    }
+
+    log_msg_t msg;
+    msg.level = LOG_LVL_CONSOLE;
+
+    while (len > 0) {
+        size_t n = (len < sizeof(msg.text)) ? len : sizeof(msg.text);
+        memcpy(msg.text, s, n);
+        msg.len = (uint8_t)n;
+
+        if (xQueueSend(log_queue, &msg, 0) != pdPASS) {
+            taskENTER_CRITICAL();
+            dropped++;
+            taskEXIT_CRITICAL();
+            return;
+        }
+        s += n;
+        len -= n;
+    }
+}
+
 void log_flush(void)
 {
     if (log_queue == NULL) {
@@ -243,7 +276,7 @@ void task_log(void *arg)
             continue;
         }
 
-        sinks_write((log_level_t)msg.level, msg.text, msg.len);
+        sinks_write(msg.level, msg.text, msg.len);
 
         /* Report drops once per change, as a WARN line of our own */
         uint32_t d = dropped;
@@ -252,7 +285,7 @@ void task_log(void *arg)
             int n = snprintf(line, sizeof(line), "[log] dropped %lu messages\r\n",
                              (unsigned long)(d - reported));
             if (n > 0) {
-                sinks_write(LOG_LVL_WARN, line, ((size_t)n < sizeof(line)) ? (size_t)n : sizeof(line) - 1);
+                sinks_write((uint8_t)LOG_LVL_WARN, line, ((size_t)n < sizeof(line)) ? (size_t)n : sizeof(line) - 1);
             }
             reported = d;
         }

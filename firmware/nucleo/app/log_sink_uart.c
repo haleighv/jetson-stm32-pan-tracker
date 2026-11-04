@@ -32,6 +32,7 @@ static log_sink_t uart_sink = {
     .flush     = NULL,              /* blocking transmit, nothing buffered */
     .min_level = LOG_LVL_DEBUG,
     .enabled   = true,
+    .console   = true,              /* CLI lives on this UART */
 };
 
 bool log_sink_uart_register(void)

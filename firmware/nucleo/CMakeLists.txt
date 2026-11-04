@@ -25,11 +25,28 @@ set(CMAKE_PROJECT_NAME nucleo)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Core project settings
-project(${CMAKE_PROJECT_NAME})
+project(${CMAKE_PROJECT_NAME} VERSION 0.1.0)
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
+
+# Exact build identity from git: last tag, commits since, hash, and
+# -dirty if there are uncommitted changes. build_nucleo.sh reconfigures
+# every run, so this stays current.
+execute_process(
+    COMMAND git describe --tags --always --dirty
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_DESCRIBE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT GIT_DESCRIBE)
+    set(GIT_DESCRIBE "unknown")
+endif()
+
+# Generate version.h into the build folder (not committed)
+configure_file(app/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h @ONLY)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
@@ -50,17 +67,22 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/task_cli.c
     app/task_log.c
     app/log_sink_uart.c
+    app/cli_cmds.c
+    ../lib/cli.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     app
+    ../lib
+    ${CMAKE_BINARY_DIR}/generated
 )
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
+
 )
 
 # Remove wrong libob.a library dependency when using cpp files

@@ -69,6 +69,7 @@ typedef struct {
     void       (*flush)(void);                          /* optional, may be NULL */
     log_level_t  min_level;                             /* sink drops anything less severe */
     bool         enabled;
+    bool         console;                               /* also gets log_console() text (CLI) */
 } log_sink_t;
 
 /* Register a sink. Call before or after log_init(). The struct must stay
@@ -90,6 +91,12 @@ log_level_t log_get_level(void);
 /* Format and queue one message. Use the LOG_x macros instead. */
 void log_write(log_level_t lvl, const char *tag, const char *fmt, ...)
     __attribute__((format(printf, 3, 4)));
+
+/* Raw console text (CLI echo and command output). No prefix, not level
+ * filtered, and only sent to sinks with console = true (uart, not flash).
+ * Same queue as log_write(), so it never interleaves mid-line with logs.
+ * Long text is split into LOG_MSG_MAX chunks. Never blocks; drops count. */
+void log_console(const char *s, size_t len);
 
 /* Messages dropped because the queue was full, since boot */
 uint32_t log_dropped_count(void);

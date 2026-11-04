@@ -13,6 +13,10 @@ if(NOT APPLE)
   target_link_libraries(pid PUBLIC m)
 endif()
 
+add_library(cli lib/cli.c)                  # command line core (parser, line editing)
+target_include_directories(cli PUBLIC lib)
+target_compile_options(cli PRIVATE -Wall -Wextra -Wpedantic)
+
 # --- Tests: host only ---
 include(CTest)                              # enables testing + ctest
 include(FetchContent)                       # lets CMake download Unity
@@ -26,3 +30,7 @@ target_compile_definitions(unity PUBLIC UNITY_INCLUDE_DOUBLE)   # enable TEST_AS
 add_executable(test_pid tests/test_pid.c)   # the test program
 target_link_libraries(test_pid PRIVATE pid unity)
 add_test(NAME test_pid COMMAND test_pid)    # register it with ctest
+
+add_executable(test_cli tests/test_cli.c)
+target_link_libraries(test_cli PRIVATE cli unity)
+add_test(NAME test_cli COMMAND test_cli)
