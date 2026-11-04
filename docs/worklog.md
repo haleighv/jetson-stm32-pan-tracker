@@ -4,11 +4,20 @@ A rolling log for the project's work.
 
 ## 2026-11-03
 - Mac toolchain: native Homebrew (`/opt/homebrew`), cmake, ninja, gcc-arm-embedded (Arm GNU Toolchain 15.3.Rel2).
-- NUCLEO-H723ZG arrived. Not brought up yet. Going with C for firmware and classic STM32CubeMX (CubeMX2 only covers newer series like the C5).
+- NUCLEO-H723ZG arrived. Going with C for firmware and classic STM32CubeMX (CubeMX2 only covers newer series like the C5).
 - PID controller in `firmware/lib/pid.c/.h`: struct API (config + state), fixed sample period, derivative on measurement, integrator and output clamps, `pid_tune()` keeps the integral so gain changes don't bump the output.
 - `pid_tune()` rejects NaN/inf in the config with `isfinite()`. NaN fails every comparison, so the min/max checks alone don't catch it.
 - Host tests: CMake + Ninja + CTest, Unity v2.6.0 pulled with FetchContent. Unity has double asserts off by default, needed `UNITY_INCLUDE_DOUBLE`. Run with `./firmware/scripts/test.sh`.
 - 7 tests pass: P only on first call, convergence on a first-order plant, NaN config rejected, reset, output limits, anti-windup, no derivative kick. ctest reports 1 test since it counts the test executable, not the Unity tests (`./build/test_pid` shows each one).
+
+Nucleo bring-up:
+- ST's GPIO blink demo from [STM32CubeH7](https://github.com/STMicroelectronics/STM32CubeH7) (`Projects/NUCLEO-H723ZG`) built and flashed from STM32CubeIDE. Board, ST-LINK, and toolchain confirmed.
+- Generated `firmware/nucleo/` with CubeMX: CMake toolchain, FreeRTOS (CMSIS_V2), LD1/LD2/LD3 on PB0/PE1/PB14.
+- Clocks: 8 MHz HSE bypass from the ST-LINK -> PLL1 -> 520 MHz SYSCLK, VOS0. Same 520 MHz as ST's FreeRTOS example. AHB 260 MHz, APB 130 MHz, APB1 timers 260 MHz.
+- HAL timebase on TIM17 since FreeRTOS owns SysTick.
+- TIM6 for the 1 kHz control tick: PSC 259, ARR 999 (1 MHz counter, 1 µs per count), ARR preload on, IRQ priority 5 (highest priority that can still call FreeRTOS FromISR APIs).
+- Builds and flashes from the command line: `./firmware/scripts/build_nucleo.sh` and `./firmware/scripts/flash.sh` (STM32_Programmer_CLI over SWD).
+- LD1 blinking at 1 Hz from a FreeRTOS task. Scheduler, clocks, and GPIO working.
 
 PID references:
 - Brett Beauregard, [Improving the Beginner's PID](http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/) (derivative kick, tuning changes, reset windup)
@@ -16,7 +25,9 @@ PID references:
 - Åström & Murray, [Feedback Systems](https://fbsbook.org), ch. 11 PID Control (free online)
 
 Saved for next time:
-- Nucleo bring-up: CubeMX project, blink, UART, 1 kHz timer ISR, measure jitter
+- Move the blink into `app/`, blink LD2 from the TIM6 1 kHz tick
+- UART logging, scope pin + jitter capture
+- Fill in `docs/firmware-architecture.md`
 - SSH key login
 - Check for MAXN SUPER
 
