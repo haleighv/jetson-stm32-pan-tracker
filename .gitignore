@@ -28,3 +28,6 @@ ros2_ws/log/
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea/
+
+# CubeMX leftovers (Eclipse project stub)
+firmware/nucleo/.project
