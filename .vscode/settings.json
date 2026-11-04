@@ -1,3 +1,7 @@
 {
-    "cmake.sourceDirectory": "${workspaceFolder}/firmware"
+    "cmake.sourceDirectory": "${workspaceFolder}/firmware",
+    "editor.renderWhitespace": "all",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
 }
