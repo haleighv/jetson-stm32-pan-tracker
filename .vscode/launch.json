@@ -1,0 +1,52 @@
+{
+    // Debug the Nucleo firmware with Cortex-Debug + ST's ST-LINK GDB server.
+    // F5: builds with the "build nucleo" task, flashes, stops at main().
+    //
+    // Tool paths are from the STM32Cube extension's bundles (installed with
+    // the extension). They include version numbers, so if an update breaks
+    // debugging, find the new paths and update both configs:
+    //   mdfind -name ST-LINK_gdbserver
+    //   mdfind -name STM32_Programmer_CLI
+    //   mdfind -name STM32H723.svd
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug nucleo",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/firmware/nucleo/build/Debug/nucleo.elf",
+            "preLaunchTask": "build nucleo",
+
+            "servertype": "stlink",
+            "gdbPath": "/opt/homebrew/bin/arm-none-eabi-gdb",
+            "device": "STM32H723ZG",
+            "interface": "swd",
+
+            "stlinkPath": "${env:HOME}/Library/Application Support/stm32cube/bundles/stlink-gdbserver/7.14.0+st.2/bin/ST-LINK_gdbserver",
+            "stm32cubeprogrammer": "${env:HOME}/Library/Application Support/stm32cube/bundles/programmer/2.23.0/bin",
+            "svdFile": "${env:HOME}/Library/Application Support/stm32cube/packs/STMicroelectronics/stm32h7xx_dfp/1.3.0/SVD/STM32H723.svd",
+
+            "runToEntryPoint": "main",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            // Attach to a running board without reflashing or resetting.
+            // Use to inspect a hang or fault as it happened.
+            "name": "Attach nucleo",
+            "type": "cortex-debug",
+            "request": "attach",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/firmware/nucleo/build/Debug/nucleo.elf",
+
+            "servertype": "stlink",
+            "gdbPath": "/opt/homebrew/bin/arm-none-eabi-gdb",
+            "device": "STM32H723ZG",
+            "interface": "swd",
+
+            "stlinkPath": "${env:HOME}/Library/Application Support/stm32cube/bundles/stlink-gdbserver/7.14.0+st.2/bin/ST-LINK_gdbserver",
+            "stm32cubeprogrammer": "${env:HOME}/Library/Application Support/stm32cube/bundles/programmer/2.23.0/bin",
+            "svdFile": "${env:HOME}/Library/Application Support/stm32cube/packs/STMicroelectronics/stm32h7xx_dfp/1.3.0/SVD/STM32H723.svd"
+        }
+    ]
+}

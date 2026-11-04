@@ -81,6 +81,25 @@ Needs cmake, ninja, Arm GNU Toolchain (`arm-none-eabi-gcc`), and STM32CubeProgra
 screen /dev/cu.usbmodem* 115200       # logs + CLI, type ? for commands
 ```
 
+### Debugging in VS Code
+Open the repo folder and install the recommended extensions when prompted (`.vscode/extensions.json`): Cortex-Debug, RTOS Views, STM32Cube for VS Code (provides the ST-LINK GDB server, STM32CubeProgrammer, and the STM32H7 device pack), CMake Tools.
+
+| Key | Does |
+|---|---|
+| `Cmd + Shift + B` | Build the Nucleo firmware (`.vscode/tasks.json`) |
+| `F5` | Build, flash, debug, stop at `main()` (`.vscode/launch.json`, "Debug nucleo") |
+
+"Attach nucleo" connects to a running board without reflashing or resetting, for looking at a hang or fault.
+
+Tool versions the debug config expects: ST-LINK GDB server 7.14.0, STM32CubeProgrammer 2.23.0, STM32H7xx DFP 1.3.0 (paths under `~/Library/Application Support/stm32cube/`). If an extension update changes them, find the new paths with `mdfind -name ST-LINK_gdbserver` (and `STM32_Programmer_CLI`, `STM32H723.svd`) and update `launch.json`.
+
+Optional shortcuts, in your own keybindings (`Cmd + Shift + P` → Preferences: Open Keyboard Shortcuts (JSON)):
+```json
+{ "key": "f6",          "command": "workbench.action.tasks.runTask", "args": "flash nucleo" },
+{ "key": "cmd+shift+t", "command": "workbench.action.tasks.runTask", "args": "host tests" }
+```
+`F6` replaces VS Code's "Focus Next Part" and `Cmd + Shift + T` replaces "Reopen Closed Editor".
+
 ## Docs
 - [Plan](docs/plan.md): milestones, results targets, scope
 - [Worklog](docs/worklog.md): day-by-day progress

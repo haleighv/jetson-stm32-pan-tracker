@@ -27,6 +27,8 @@ ros2_ws/log/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
 .idea/
 
 # CubeMX leftovers (Eclipse project stub)

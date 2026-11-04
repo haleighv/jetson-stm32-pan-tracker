@@ -1,0 +1,9 @@
+{
+    // VS Code offers to install these when the repo is opened
+    "recommendations": [
+        "marus25.cortex-debug",                     // debugger (F5)
+        "mcu-debug.rtos-views",                     // FreeRTOS task view while halted
+        "stmicroelectronics.stm32-vscode-extension",// installs ST-LINK GDB server, programmer, H7 pack
+        "ms-vscode.cmake-tools"                     // CMake support for the host build
+    ]
+}

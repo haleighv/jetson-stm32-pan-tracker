@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build nucleo",
+            "type": "shell",
+            "command": "./firmware/scripts/build_nucleo.sh",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "flash nucleo",
+            "type": "shell",
+            "command": "./firmware/scripts/flash.sh",
+            "problemMatcher": []
+        },
+        {
+            "label": "host tests",
+            "type": "shell",
+            "command": "./firmware/scripts/test.sh",
+            "group": "test",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
