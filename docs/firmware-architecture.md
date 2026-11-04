@@ -20,33 +20,70 @@ STM32H723 (NUCLEO-H723ZG) firmware for the pan axis. Skeleton from [plan.md](pla
 | Console/log | USART3, 115200 8N1 | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
 | E-stop input | GPIO/EXTI | TBD | |
 | Status LEDs | GPIO | PB0, PE1, PB14 | LD1/LD2/LD3 |
-| Scope/debug pin | GPIO | TBD | timing measurements |
+| Scope/debug pin | GPIO | PG14 (Arduino D2) | timing measurements |
 | Watchdog | IWDG | - | |
 
 Read: UM2407 (Nucleo pinout, solder bridges), DS13313 (pin alternate functions), RM0468 (TIM, FDCAN, ETH, ADC, IWDG chapters).
 
 ## Execution contexts
+Ordered most urgent first. Safety beats comms beats observability beats debug: if the CPU gets busy, CLI and logs suffer first, heartbeat and faults last, and the control ISR never waits on a task.
+
 | Context | Type | Rate | Priority | Does | Talks to |
 |---|---|---|---|---|---|
-| control | TIM6 ISR | 1 kHz | TBD (above RTOS syscall limit) | encoder -> PID -> PWM, current check | TBD |
-| supervisor | task | TBD | highest task | state machine, heartbeat timeout, control-loop liveness, kicks IWDG | all |
-| can_comms | task | event | TBD | RX setpoint/heartbeat, TX status | supervisor, control |
-| telemetry | task | 1 kHz batches | TBD | pack samples, send UDP | control |
-| log | task | event | lowest | UART TX via DMA | everyone |
-| estop | EXTI ISR | event | TBD | latch fault, PWM off | supervisor |
+| control | TIM6 ISR | 1 kHz | TBD (moves above the syscall limit later) | encoder -> PID -> PWM, current check, push telemetry sample | supervisor, telemetry (lock-free) |
+| estop | EXTI ISR | event | TBD | PWM off, latch fault | supervisor |
+| supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG, status LED | all |
+| host_comms | task | event (CAN RX) + periodic status TX | NORMAL | setpoints + heartbeat from Jetson, status back | supervisor, control |
+| telemetry | task | batches of 1 kHz samples | NORMAL | pack samples, send UDP | control |
+| cli | task | event (UART RX) | LOW | debug commands | log |
+| log | task | event | LOW | only owner of log sinks (UART TX today) | everyone |
+| init | task, runs once | boot | default | create the task table, then delete itself | - |
+
+Status: init, log, cli running. Others are placeholders.
+
+### Task creation
+- One table in `app/task_init.c` (function, name, stack bytes, param, priority, handle). Priorities come from `task_priority_t` in `task_init.h` (LOW/NORMAL/HIGH/SUMMIT).
+- CubeMX's default task is repurposed as `init`. It calls `log_init()`, registers sinks, creates the table, then `vTaskDelete(NULL)`. Init runs after the scheduler starts, so it's allowed to block.
+- Dynamic allocation (heap_4, 48 KB), but only during init. Nothing allocates after boot, so heap use is fixed and checkable with `xPortGetFreeHeapSize()`.
+- Task names stay under 16 chars (`configMAX_TASK_NAME_LEN`).
 
 Open questions:
-- TBD: how control shares data with tasks without FreeRTOS calls (it runs above the syscall priority)
-- TBD: stack sizes
+- TBD: how control shares data with tasks without FreeRTOS calls (once it runs above the syscall priority)
+- TBD: stack sizes, measured with the CLI `tasks` command (stack high-water marks)
+- TBD: does the supervisor create host_comms/telemetry after hardware init, instead of init creating everything
 
 Read: PM0253 (exception model, NVIC priorities), FreeRTOS Cortex-M interrupt priority page.
+
+## Logging
+- API in `app/log.h`: `LOG_E/W/I/D(...)` with a per-file `LOG_TAG`. Output: `[   12.345] I cli: message`.
+- `log_write()` formats into a fixed 128-byte message and queues it by value. It never blocks: a full queue drops the message and bumps a counter, and the log task prints `dropped N` once.
+- Task context only (asserts `!xPortIsInsideInterrupt()`). ISRs set flags or counters that a task logs.
+- Two filters: a global level checked before formatting (cheap), then a per-sink `min_level`.
+- `LOG_COMPILE_LEVEL` strips levels at compile time (e.g. no DEBUG strings in Release).
+
+### Sinks
+Only the log task calls sinks, one message at a time, so sinks need no locking and a slow sink delays logs, never the caller.
+
+| Sink | Status | min_level | Notes |
+|---|---|---|---|
+| uart | done | DEBUG | USART3 blocking transmit, 50 ms timeout |
+| flash | planned | WARN | RAM buffer, programmed in 32-byte flash words. Records get seq/timestamp/len/CRC for power-loss recovery. |
+| udp | planned | TBD | `init()` fails until the Ethernet link is up, batches into datagrams for the Jetson |
+
+Rules:
+- One owner of UART TX: the log task. `printf` (`retarget.c`) only before the scheduler starts or in fault handlers.
+- No flash erase while ARMED. The H723 has a single flash bank, so an erase stalls instruction fetch, which would break control timing and the 50 ms heartbeat guarantee. Erase only in IDLE, or run control and flash code from ITCM.
+- Flash sink stays WARN and above (~10k erase cycles per sector).
+- First step before flash: a `.noinit` RAM ring buffer that survives warm resets, dumped with a CLI `log dump` after a fault.
 
 ## Interrupt priorities
 | Priority | Who | Can call FreeRTOS? |
 |---|---|---|
 | TBD | control ISR, e-stop | no |
 | TBD | configMAX_SYSCALL_INTERRUPT_PRIORITY | - |
-| TBD | FDCAN, ETH, UART DMA | yes (FromISR) |
+| TBD | FDCAN, ETH, USART3 RX | yes (FromISR) |
+
+Current: TIM6 at 5, the highest priority that can still call FreeRTOS FromISR APIs (`configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY` = 5).
 
 ## State machine
 BOOT -> IDLE -> ARMED -> FAULT
@@ -62,25 +99,31 @@ BOOT -> IDLE -> ARMED -> FAULT
 In FAULT: PWM off, LD3 on, fault cause logged and reported over CAN.
 
 ## Memory
-- Static allocation only (no heap).
+- FreeRTOS heap_4, 48 KB. Allocate only during init, never after boot.
+- Log queue: 32 x ~130 bytes ≈ 4 KB.
 - TBD: control ISR code in ITCM, its data in DTCM.
 - TBD: Ethernet DMA buffers in a non-cacheable MPU region.
 
 Read: AN4891 (bus matrix, TCM, where code/data should go), AN4839 (L1 cache), AN4838 (MPU), ES0491 (errata).
 
 ## Clocks and timebase
-- HSE 8 MHz from the ST-LINK (bypass), SYSCLK 550 MHz. TBD: confirm in UM2407 and RM0468 RCC chapter.
-- FreeRTOS owns SysTick; HAL timebase moves to a spare TIM.
+- HSE 8 MHz from the ST-LINK (bypass) -> PLL1 -> SYSCLK 520 MHz, VOS0. Same 520 MHz as ST's FreeRTOS example.
+- AHB 260 MHz, APB 130 MHz, APB1 timer clock 260 MHz.
+- FreeRTOS owns SysTick (1 kHz tick). HAL timebase on TIM17.
+- TIM6: PSC 259, ARR 999 -> 1 MHz counter (1 µs per count), 1 kHz update.
 
 ## Code layout
 ```
 firmware/
   lib/       portable code, host-tested (pid)
   tests/     Unity host tests
-  nucleo/    CubeMX-generated BSP (Core/, Drivers/, .ioc) + app/
-  scripts/
+  nucleo/    CubeMX-generated BSP (Core/, Drivers/, Middlewares/, .ioc) + app/
+    app/     my board code (HAL + FreeRTOS), flat: .h next to .c
+  scripts/   build.sh/test.sh (host), build_nucleo.sh/flash.sh (target)
 ```
-Generated code is only edited inside USER CODE blocks. main() calls app_main().
+- Pure logic with no HAL or FreeRTOS (PID, CLI parser) goes in `lib/` with host tests.
+- Generated code is only edited inside USER CODE blocks. The init task's body calls `task_init_run()`.
+- File name = function prefix (`task_cli.c` -> `task_cli()`).
 
 ## Error handling
 - TBD: which faults latch vs reset
