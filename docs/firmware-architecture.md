@@ -19,7 +19,7 @@ STM32H723 (NUCLEO-H723ZG) firmware for the pan axis. Skeleton from [plan.md](pla
 | Telemetry | ETH (RMII) | on-board PHY | |
 | Console/log | USART3, 115200 8N1 | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
 | E-stop input | GPIO/EXTI | TBD | |
-| Status LEDs | GPIO | PB0, PE1, PB14 | LD1/LD2/LD3 |
+| Status LEDs | GPIO | PB0, PE1, PB14 | LD1 green, LD2 amber, LD3 red. Only the LED task drives them. Red is for the supervisor. |
 | Scope/debug pin | GPIO | PG14 (Arduino D2) | timing measurements |
 | Watchdog | IWDG | - | |
 
@@ -32,18 +32,24 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 |---|---|---|---|---|---|
 | control | TIM6 ISR | 1 kHz | TBD (moves above the syscall limit later) | encoder -> PID -> PWM, current check, push telemetry sample | supervisor, telemetry (lock-free) |
 | estop | EXTI ISR | event | TBD | PWM off, latch fault | supervisor |
-| supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG, status LED | all |
+| msg | task (dispatcher) | event | SUMMIT | copy each posted message to its subscribers | everyone (bus) |
+| supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG | all (bus), led |
 | host_comms | task | event (CAN RX) + periodic status TX | NORMAL | setpoints + heartbeat from Jetson, status back | supervisor, control |
 | telemetry | task | batches of 1 kHz samples | NORMAL | pack samples, send UDP | control |
-| cli | task | event (UART RX) | LOW | debug commands | log |
+| Tmr Svc | FreeRTOS timer task | event | 2 (same as NORMAL) | runs software timer callbacks (LED blink/fade) | led |
+| led | task | event | LOW | only owner of LD1-LD3: on/off/blink/fade | bus |
+| cli | task | event (UART RX) | LOW | debug commands | log, bus |
 | log | task | event | LOW | only owner of log sinks (UART TX today) | everyone |
-| init | task, runs once | boot | default | create the task table, then delete itself | - |
+| init | task, runs once | boot | default | create tasks, wait at the sync point, release them, delete itself | - |
 
-Status: init, log, cli running. Others are placeholders.
+Status: init, log, cli, msg, led, supervisor running. control is configured (TIM6), not started. Others are placeholders.
 
 ### Task creation
-- One table in `app/task_init.c` (function, name, stack bytes, param, priority, handle). Priorities come from `task_priority_t` in `task_init.h` (LOW/NORMAL/HIGH/SUMMIT).
-- CubeMX's default task is repurposed as `init`. It calls `log_init()`, registers sinks, creates the table, then `vTaskDelete(NULL)`. Init runs after the scheduler starts, so it's allowed to block.
+- One table in `app/task_init.c` (function, name, stack bytes, param, priority, handle, sync). Priorities come from `task_priority_t` in `task_init.h` (LOW/NORMAL/HIGH/SUMMIT).
+- CubeMX's default task is repurposed as `init`. It sets up logging, the message bus, and the sync point, creates the table, waits for every task to sync, releases them, then `vTaskDelete(NULL)`. Init runs after the scheduler starts, so it's allowed to block.
+- Every task follows the same shape: a local `initialize()` (create timers/buffers, subscribe to its events), then `task_sync()`, then its loop.
+- Startup sync (`app/task_utilities.c`): each task gives a counting "ready" semaphore and waits on a gate. Init opens the gate once all have checked in; it passes from task to task, highest priority first. No loop runs and nothing is posted before every task has subscribed. Init logs a warning every second if a task never checks in.
+- The log task doesn't sync (`sync = false`), so it can print while the others initialize.
 - Dynamic allocation (heap_4, 48 KB), but only during init. Nothing allocates after boot, so heap use is fixed and checkable with `xPortGetFreeHeapSize()`.
 - Task names stay under 16 chars (`configMAX_TASK_NAME_LEN`).
 
@@ -76,6 +82,13 @@ Rules:
 - Flash sink stays WARN and above (~10k erase cycles per sector).
 - First step before flash: a `.noinit` RAM ring buffer that survives warm resets, dumped with a CLI `log dump` after a fault.
 
+## Messaging
+- Pub/sub (`app/msg.c/.h`). Anyone posts to one global queue (32 deep): `msg_post()` from tasks, `msg_post_from_isr()` from ISRs. Never blocks unless the caller asks.
+- The `msg` dispatcher task copies each message to every task subscribed to its event id. Each subscriber has its own queue (`msg_subscriber_create()` + `msg_subscribe()` in its `initialize()`), since a queue can only have one reader.
+- Messages are 12 bytes: event id (`app/events.h`) plus a small payload union. Copied by value.
+- Full queues drop and count: bus full, unrouted (no subscriber), and per subscriber. CLI `msgs` shows them.
+- Rule: the 1 kHz control path stays off the bus (extra hop and copy). Control shares data through variables.
+
 ## Interrupt priorities
 | Priority | Who | Can call FreeRTOS? |
 |---|---|---|
@@ -83,7 +96,9 @@ Rules:
 | TBD | configMAX_SYSCALL_INTERRUPT_PRIORITY | - |
 | TBD | FDCAN, ETH, USART3 RX | yes (FromISR) |
 
-Current: TIM6 at 5, the highest priority that can still call FreeRTOS FromISR APIs (`configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY` = 5).
+Current:
+- TIM6 at 5, the highest priority that can still call FreeRTOS FromISR APIs (`configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY` = 5).
+- USART3 at 6, below TIM6, so typing can't delay the control tick.
 
 ## State machine
 BOOT -> IDLE -> ARMED -> FAULT
@@ -93,10 +108,10 @@ BOOT -> IDLE -> ARMED -> FAULT
 | BOOT | IDLE | init done |
 | IDLE | ARMED | TBD (arm command over CAN) |
 | ARMED | IDLE | TBD |
-| any | FAULT | e-stop, heartbeat timeout (<= 50 ms), current limit, control loop stalled, assert/HardFault |
-| FAULT | IDLE | TBD (latched; how is it cleared?) |
+| any | FAULT | `EVENT_ERROR` on the bus (done); e-stop, heartbeat timeout (<= 50 ms), current limit, control loop stalled, assert/HardFault (planned) |
+| FAULT | IDLE | `clear_fault` from the CLI. Latched: never clears on its own. TODO: send it as a message so only the supervisor changes state. |
 
-In FAULT: PWM off, LD3 on, fault cause logged and reported over CAN.
+In FAULT: PWM off, red LED (LD3) via the LED task, fault cause logged and reported over CAN.
 
 ## Memory
 - FreeRTOS heap_4, 48 KB. Allocate only during init, never after boot.

@@ -42,10 +42,11 @@ A camera mounted to a motor that tracks and centers an AprilTag (pan-only).
 - [x] Repo, README, commit template, .gitignore
 - [x] Jetson flashed (JetPack 7.2.1 to SSD), headless SSH over Wi-Fi
 - [x] IMX219 at 720p60 (59.77 fps avg, 0 dropped)
-- [ ] Mac toolchain (Command Line Tools, cmake, ninja, gcc-arm-embedded)
-- [ ] PID on the host with unit tests
+- [x] Mac toolchain (Command Line Tools, cmake, ninja, gcc-arm-embedded)
+- [x] PID on the host with unit tests
 - [ ] CI: host tests + cross-compile
-- [ ] Nucleo: clocks, UART, blink, 1 kHz timer ISR, jitter capture
+- [x] Nucleo: clocks, UART, blink
+- [ ] Nucleo: 1 kHz timer ISR, jitter capture
 - [ ] FDCAN internal loopback
 
 ## Results targets

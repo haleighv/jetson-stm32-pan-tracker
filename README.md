@@ -17,6 +17,7 @@ Safety:
 - [x] Jetson: JetPack 7.2.1 + ROS 2 Jazzy, IMX219 at 720p60 (59.77 fps, 0 dropped over ~68 s)
 - [x] PID controller with host unit tests (anti-windup, no derivative kick, NaN-safe config)
 - [x] STM32 bring-up: 520 MHz, FreeRTOS, task table, queued leveled logging, UART CLI
+- [x] STM32 task framework: pub/sub messaging, startup sync, supervisor skeleton, LED task
 - [ ] 1 kHz control tick + jitter measurement
 - [ ] CAN link to the Jetson
 - [ ] Motor, encoder, current sense
@@ -62,7 +63,7 @@ flowchart LR
 ## Repo layout
 ```
 firmware/
-  lib/        portable C, host-tested (PID, CLI parser)
+  lib/        portable C, host-tested (PID, CLI parser, LED fade)
   tests/      Unity host tests
   nucleo/     NUCLEO-H723ZG target: CubeMX BSP (Core/, Drivers/, .ioc) + app/
   scripts/    build.sh, test.sh (host), build_nucleo.sh, flash.sh (target)
@@ -76,7 +77,7 @@ tools/        analysis scripts (jitter, step response, latency)
 Needs cmake, ninja, Arm GNU Toolchain (`arm-none-eabi-gcc`), and STM32CubeProgrammer (`STM32_Programmer_CLI` on PATH).
 
 ```
-./firmware/scripts/test.sh            # host unit tests (PID, CLI)
+./firmware/scripts/test.sh            # host unit tests (PID, CLI, LED fade)
 ./firmware/scripts/flash.sh           # build + flash the Nucleo over ST-LINK
 screen /dev/cu.usbmodem* 115200       # logs + CLI, type ? for commands
 ```
