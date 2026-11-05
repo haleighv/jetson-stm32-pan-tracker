@@ -21,6 +21,7 @@
 #include "cli.h"
 #include "cli_cmds.h"
 #include "log.h"
+#include "task_utilities.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -44,15 +45,23 @@ static void rx_start(void)
     (void)HAL_UART_Receive_IT(&huart3, &rx_byte, 1);
 }
 
-void task_cli(void *arg)
+static void initialize(void)
 {
-    (void)arg;
-
     rx_stream = xStreamBufferCreate(CLI_RX_BUF_SIZE, 1);
     configASSERT(rx_stream != NULL);
 
     cli_init(&cli, cli_cmds, cli_cmds_count, cli_write, "> ");
+
+    /* Start receiving now; anything typed during boot waits in rx_stream */
     rx_start();
+}
+
+void task_cli(void *arg)
+{
+    (void)arg;
+
+    initialize();
+    task_sync();
 
     LOG_I("ready, type '?' for help");
     cli_prompt(&cli);

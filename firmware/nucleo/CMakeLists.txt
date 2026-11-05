@@ -69,6 +69,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/log_sink_uart.c
     app/cli_cmds.c
     ../lib/cli.c
+    app/task_supervisor.c
+    app/task_led.c
+    app/task_utilities.c
+    app/msg.c
+    ../lib/led_fade.c
 )
 
 # Add include paths

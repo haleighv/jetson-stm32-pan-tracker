@@ -2,7 +2,8 @@
  * task_init.h
  *
  * Task table types and the init task. The init task creates every task in
- * the table (task_init.c), then deletes itself.
+ * the table (task_init.c), waits for them at the sync point
+ * (task_utilities.h), releases them, then deletes itself.
  *
  * Notes:
  * - Runs after the scheduler starts, so init code is allowed to block.
@@ -16,6 +17,7 @@
 #define TASK_INIT_H
 
 #include "FreeRTOS.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include "task.h"
 
@@ -45,6 +47,7 @@ typedef struct
     void *param;
     uint16_t priority;
     TaskHandle_t *handle;
+    bool sync;              /* task calls task_sync() after its initialize() */
 } task_descriptor_t;
 
 void task_init_run(void *arg);

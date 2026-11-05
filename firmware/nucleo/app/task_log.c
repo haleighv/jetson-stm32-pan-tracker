@@ -258,6 +258,8 @@ bool log_level_from_str(const char *s, log_level_t *out)
 
 /* --- Task --- */
 
+/* Doesn't call task_sync(): it has to run while the other tasks
+ * initialize, so their logs (and the sync progress) get printed. */
 void task_log(void *arg)
 {
     (void)arg;

@@ -18,6 +18,10 @@
 #include "task.h"
 #include "main.h"
 #include "version.h"
+#include "task_supervisor.h"
+#include "task_led.h"
+#include "msg.h"
+#include <stdlib.h>
 
 #define TASKS_MAX   16      /* rows "tasks" can show */
 
@@ -86,25 +90,47 @@ static cli_status_t cmd_heap(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
+/* Goes through the LED task like everything else, so the CLI and the
+ * supervisor can't fight over a pin. */
 static cli_status_t cmd_led(cli_t *cli, int argc, char **argv)
 {
-    (void)cli;
-    static GPIO_TypeDef *const port[] = { LD1_GPIO_Port, LD2_GPIO_Port, LD3_GPIO_Port };
-    static const uint16_t      pin[]  = { LD1_Pin,       LD2_Pin,       LD3_Pin };
+    led_mode_t mode;
+    uint16_t   period = 0;
 
-    if (argc != 3 || argv[1][0] < '1' || argv[1][0] > '3' || argv[1][1] != '\0') {
+    if (argc < 3 || argc > 4 || argv[1][0] < '1' || argv[1][0] > '3' || argv[1][1] != '\0') {
         return CLI_ERR_ARGS;
     }
-    int i = argv[1][0] - '1';
-
-    if (strcmp(argv[2], "on") == 0) {
-        HAL_GPIO_WritePin(port[i], pin[i], GPIO_PIN_SET);
-    } else if (strcmp(argv[2], "off") == 0) {
-        HAL_GPIO_WritePin(port[i], pin[i], GPIO_PIN_RESET);
-    } else if (strcmp(argv[2], "toggle") == 0) {
-        HAL_GPIO_TogglePin(port[i], pin[i]);
-    } else {
+    if (!led_mode_from_str(argv[2], &mode)) {
         return CLI_ERR_ARGS;
+    }
+    if (argc == 4) {
+        char *end;
+        unsigned long ms = strtoul(argv[3], &end, 10);
+        if (*end != '\0' || ms == 0 || ms > UINT16_MAX) {
+            return CLI_ERR_ARGS;
+        }
+        period = (uint16_t)ms;
+    }
+
+    if (!led_set((led_id_t)(argv[1][0] - '1'), mode, period)) {
+        cli_printf(cli, "message bus full, not sent\r\n");
+    }
+    return CLI_OK;
+}
+
+static cli_status_t cmd_msgs(cli_t *cli, int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    msg_stats_t st;
+    msg_get_stats(&st);
+
+    cli_printf(cli, "posted %lu, bus full %lu, unrouted %lu\r\n",
+               (unsigned long)st.posted, (unsigned long)st.post_dropped,
+               (unsigned long)st.unrouted);
+    for (msg_queue_id_t i = 0; i < (msg_queue_id_t)st.num_subs; i++) {
+        cli_printf(cli, "  %-12s dropped %lu\r\n", msg_queue_name(i),
+                   (unsigned long)msg_queue_dropped(i));
     }
     return CLI_OK;
 }
@@ -135,15 +161,39 @@ static cli_status_t cmd_reset(cli_t *cli, int argc, char **argv)
     return CLI_OK;          /* not reached */
 }
 
+static cli_status_t state(cli_t *cli, int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    supervisor_state_t s = supervisor_get_state();
+    cli_printf(cli, "state %s for %lu ms\r\n", supervisor_state_name(s), supervisor_get_state_ms());
+    return CLI_OK;
+}
+
+static cli_status_t clear_fault(cli_t *cli, int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    if (supervisor_clear_fault()) {
+        cli_printf(cli, "fault cleared\r\n");
+    } else {
+        cli_printf(cli, "no fault to clear\r\n");
+    }
+    return CLI_OK;
+}
+
 const cli_cmd_t cli_cmds[] = {
     /* Any order works ("?" sorts its output); kept alphabetical to read easily */
-    { "heap",     "heap",                             "FreeRTOS heap use",                 cmd_heap },
-    { "led",      "led <1-3> <on|off|toggle>",        "drive a user LED",                  cmd_led },
-    { "loglevel", "loglevel [error|warn|info|debug]", "show or set the log level",         cmd_loglevel },
-    { "reset",    "reset",                            "software reset",                    cmd_reset },
-    { "tasks",    "tasks",                            "task state, priority, stack free",  cmd_tasks },
-    { "uptime",   "uptime",                           "time since boot",                   cmd_uptime },
-    { "version",  "version",                          "git hash, build type, build time",  cmd_version },
+    { "clear_fault", "clear_fault",                       "clear any fault conditions",        clear_fault  },
+    { "heap",        "heap",                              "FreeRTOS heap use",                 cmd_heap     },
+    { "led",         "led <1-3> <on|off|blink|fade> [ms]", "LED mode (1 green, 2 amber, 3 red)", cmd_led     },
+    { "msgs",        "msgs",                              "message bus counters",              cmd_msgs     },
+    { "log_level",   "log_level [error|warn|info|debug]", "show or set the log level",         cmd_loglevel },
+    { "reset",       "reset",                             "software reset",                    cmd_reset    },
+    { "state",       "state",                             "show current state",                state        },
+    { "tasks",       "tasks",                             "task state, priority, stack free",  cmd_tasks   },
+    { "uptime",      "uptime",                            "time since boot",                   cmd_uptime   },
+    { "version",     "version",                           "git hash, build type, build time",  cmd_version  },
 };
 
 const size_t cli_cmds_count = sizeof(cli_cmds) / sizeof(cli_cmds[0]);
