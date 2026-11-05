@@ -17,6 +17,10 @@ add_library(cli lib/cli.c)                  # command line core (parser, line ed
 target_include_directories(cli PUBLIC lib)
 target_compile_options(cli PRIVATE -Wall -Wextra -Wpedantic)
 
+add_library(led_fade lib/led_fade.c)        # LED breathing curve
+target_include_directories(led_fade PUBLIC lib)
+target_compile_options(led_fade PRIVATE -Wall -Wextra -Wpedantic)
+
 # --- Tests: host only ---
 include(CTest)                              # enables testing + ctest
 include(FetchContent)                       # lets CMake download Unity
@@ -34,3 +38,7 @@ add_test(NAME test_pid COMMAND test_pid)    # register it with ctest
 add_executable(test_cli tests/test_cli.c)
 target_link_libraries(test_cli PRIVATE cli unity)
 add_test(NAME test_cli COMMAND test_cli)
+
+add_executable(test_led_fade tests/test_led_fade.c)
+target_link_libraries(test_led_fade PRIVATE led_fade unity)
+add_test(NAME test_led_fade COMMAND test_led_fade)
