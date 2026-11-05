@@ -2,6 +2,27 @@
 
 A rolling log for the project's work.
 
+## 2026-11-04
+- Tagged v0.1.0. `version` shows `0.1.0 (v0.1.0) Debug`.
+- Baseline before adding tasks: heap 38 KB free of 48 KB (35.6 KB min ever). Stack free: cli 580 words, log 416, IDLE 90.
+- VS Code: `Cmd+Shift+B` build, `F6` flash, `Cmd+Shift+T` host tests, `F5` debug. Debugging with Cortex-Debug + ST's ST-LINK GDB server, stops at `main()`, peripheral registers from the H723 SVD. Went with Cortex-Debug over the STM32Cube debugger since the STM32Cube one wouldn't detect a project in a repo subfolder.
+- `tasks.json` and `launch.json` are tracked now. Paths use `${env:HOME}`, tool versions are in the README.
+- Scope pin on PG14 (Arduino D2) for timing measurements.
+- Supervisor task: BOOT/IDLE/ARMED/FAULT, 10 ms loop with `vTaskDelayUntil()`. FAULT latches. `state` and `clear_fault` in the CLI. Subscribes to `EVENT_ERROR`, which puts it in FAULT.
+- Messaging: pub/sub. Tasks post to one global queue, a dispatcher task (highest priority) copies each message to every task subscribed to that event. Each subscriber has its own queue. Drops are counted, `msgs` shows them. Event ids in `app/events.h`.
+- LED task owns LD1 green, LD2 amber, LD3 red. Modes: on/off/blink/fade, driven by FreeRTOS software timers. Fade is software PWM from a 1 ms timer (10 steps, 100 Hz), only runs while something is fading. LD2 (PE1) has no timer output, so no hardware PWM on all three. Red is for the supervisor.
+- Fade curve in `firmware/lib/led_fade.c` (squared so it looks even) with 6 host tests. 30 host tests total.
+- Startup sync: each task runs its own `initialize()` (timers, subscriptions), then waits in `task_sync()`. Init task releases everyone once all have checked in. Nothing posts or runs its loop before every task has subscribed. Log task doesn't sync so it can print during init.
+- CLI: `loglevel` renamed to `log_level`, `led <1-3> <on|off|blink|fade> [ms]` goes through the LED task, added `msgs`, `state`, `clear_fault`.
+
+Saved for next time:
+- Check bus, LED task, and sync on the board (boot log order, `msgs` shows 0 unrouted, fade)
+- `clear_fault` from the CLI should post a message to the supervisor instead of changing its state directly
+- Lab 5: start TIM6 control tick, liveness check, `jitter` command, Saleae captures idle + loaded
+- Architecture doc: message bus, task sync, LED ownership
+- SSH key login
+- Check for MAXN SUPER
+
 ## 2026-11-03
 - Mac toolchain: native Homebrew (`/opt/homebrew`), cmake, ninja, gcc-arm-embedded (Arm GNU Toolchain 15.3.Rel2).
 - NUCLEO-H723ZG arrived. Going with C for firmware and classic STM32CubeMX (CubeMX2 only covers newer series like the C5).
