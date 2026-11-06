@@ -1,5 +1,7 @@
 # Jetson Orin + STM32H7 closed-loop visual tracker
 
+[![CI](https://github.com/haleighv/jetson-stm32-pan-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/haleighv/jetson-stm32-pan-tracker/actions/workflows/ci.yml)
+
 > Status: in progress (started October 2026).
 
 A camera mounted to a motor for visually tracking and centering an AprilTag (pan-only).
@@ -21,6 +23,7 @@ Safety:
 - [x] 1 kHz control tick on TIM6: ±153 ns jitter under load (DWT min/max)
 - [x] Jitter p99 from a Saleae capture: 1.1 µs idle and loaded
 - [x] FDCAN internal loopback: 1M frames, 0 lost, 0 errors
+- [x] CI: host tests + firmware build on every push, elf/map kept per commit
 - [ ] CAN link to the Jetson
 - [ ] Motor, encoder, current sense
 - [ ] Safety: e-stop, heartbeat, watchdog
@@ -82,6 +85,11 @@ Needs cmake, ninja, Arm GNU Toolchain (`arm-none-eabi-gcc`), and STM32CubeProgra
 ./firmware/scripts/test.sh            # host unit tests (PID, CLI, LED fade)
 ./firmware/scripts/flash.sh           # build + flash the Nucleo over ST-LINK
 screen /dev/cu.usbmodem* 115200       # logs + CLI, type ? for commands
+```
+
+CI (`.github/workflows/ci.yml`) runs the host tests and builds the firmware on every push to `mainline` and every PR. Each run keeps `nucleo.elf` and `nucleo.map` as a download. To flash one:
+```
+STM32_Programmer_CLI -c port=SWD -w nucleo.elf -v -rst
 ```
 
 ### Debugging in VS Code
