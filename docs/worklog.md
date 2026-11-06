@@ -16,15 +16,16 @@ CAN bus between the Jetson and the Nucleo:
 | Nucleo -> Jetson | 1 (`can test 1`, id 0x7F0) | Jetson 0 errors, 0 dropped |
 
 - Nucleo REC read 4 right after the Jetson rebooted (J17 glitches while the pins get reconfigured). It counts back down by 1 per good frame and was 0 after the burst.
+- Saleae on the real bus: Jetson frames decode with ACK true. On the Nucleo's TX pin the only activity is one dominant bit in each frame's ACK slot, the Nucleo acknowledging. Screenshot `docs/results/2026-11-06-can-bus-decode-ack.png`.
+- `can send <id> <hex>` CLI command (hex string like `cansend`, 0-8 bytes): Nucleo -> Jetson frames on demand.
 - Raw output in `docs/results/2026-11-06-can-link.txt`.
 - Also: SSH key login to the Jetson (`ssh jetson`).
 
 Saved for next time:
-- Saleae on the real bus: ACK slot should read true now (it can't in loopback)
-- `can send <id> <hex>` CLI command
 - `tools/can_echo.py` on the Jetson, then `can test 10000` over the real bus
 - Fault injection: pull CAN-H, watch error passive / bus off on both sides. Nucleo needs software to recover from bus off (`restart-ms` covers the Jetson)
 - `hardware/can-wiring.md`
+- Photos: README hero shot, J17 breakout and bus wiring in `hardware/photos/`, Saleae decode in `docs/results/` (JPEG ~1600 px, GPS stripped)
 - Clock check, supervisor liveness check, `clear_fault` as a message, MAXN SUPER
 
 ## 2026-11-05
