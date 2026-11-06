@@ -54,10 +54,15 @@ FDCAN loopback:
 - Milestone 1 CAN item done (target was 10k frames, 0 errors). Raw output in `docs/results/2026-11-05-fdcan-loopback.txt`.
 - Read: ST [AN5348](https://www.st.com/resource/en/application_note/dm00625700-fdcan-peripheral-on-stm32-devices-stmicroelectronics.pdf) (FDCAN on STM32), RM0468 FDCAN chapter, TI [SLOA101](https://www.ti.com/lit/SLOA101) (CAN basics).
 
+CI:
+- GitHub Actions (`.github/workflows/ci.yml`), two jobs on ubuntu-24.04: host tests (`test.sh`), and the firmware build (`build_nucleo.sh Debug`) with Arm GNU Toolchain 15.3.Rel2, same as the Mac.
+- Checkout needs `fetch-depth: 0`: the version string comes from `git describe`, which needs history and tags. The default shallow clone only gets a hash.
+- Each run uploads `nucleo.elf` + `nucleo.map` and logs the size, so any commit has a flashable binary and flash/RAM use can be compared over time.
+- Both jobs green. That closes milestone 1.
+
 Saved for next time:
 - FDCAN Nominal Sync Jump Width is still 1 in CubeMX, set it to 5 (= seg2) before talking to a real node
 - Time a long `can test` run (ping-pong rate should be ~7k frames/s at 1 Mbps if the bit timing is right)
-- CI: host tests + cross-compile (last milestone 1 item)
 - Clock check: `uptime` vs Mac clock over 30-60 min (+2400 ppm = ~4.3 s per 30 min). Then LSE (32.768 kHz crystal) out on MCO1/PA8, capture with the Saleae: if that reads clean, it's the HSE, not the Saleae.
 - Liveness check in the supervisor (tick count must advance ~10 per 10 ms, else FAULT)
 - `clear_fault` as a message
