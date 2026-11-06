@@ -13,6 +13,7 @@
 #include "log.h"
 #include "version.h"
 #include "control.h"
+#include "can.h"
 #include "msg.h"
 #include "task_led.h"
 #include "task_supervisor.h"
@@ -226,8 +227,52 @@ static cli_status_t cmd_jitter(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
+/* CAN counters and the loopback self-test. The test runs in the RX ISR
+ * (ping-pong), so "can test" returns right away; run "can" again to see
+ * how it went. 10k frames take about 1-2 s at 1 Mbps. */
+static cli_status_t cmd_can(cli_t *cli, int argc, char **argv)
+{
+    if (argc == 3 && strcmp(argv[1], "test") == 0) {
+        char *end;
+        unsigned long n = strtoul(argv[2], &end, 10);
+        if (*end != '\0' || n == 0) {
+            return CLI_ERR_ARGS;
+        }
+        if (!can_test_done()) {
+            cli_printf(cli, "test already running\r\n");
+        } else if (can_test_start((uint32_t)n)) {
+            cli_printf(cli, "test started, %lu frames\r\n", n);
+        } else {
+            cli_printf(cli, "first frame not sent, check tx_full\r\n");
+        }
+        return CLI_OK;
+    }
+    if (argc == 2 && strcmp(argv[1], "clear") == 0) {
+        can_reset_stats();
+        cli_printf(cli, "can stats cleared\r\n");
+        return CLI_OK;
+    }
+    if (argc != 1) {
+        return CLI_ERR_ARGS;
+    }
+
+    can_stats_t st;
+    can_get_stats(&st);
+    cli_printf(cli, "test %s\r\n", can_test_done() ? "idle" : "running");
+    cli_printf(cli, "tx %lu, tx_full %lu\r\n",
+               (unsigned long)st.tx_frames, (unsigned long)st.tx_full);
+    cli_printf(cli, "rx %lu, seq_gaps %lu, bad_data %lu\r\n",
+               (unsigned long)st.rx_frames, (unsigned long)st.rx_seq_gaps,
+               (unsigned long)st.rx_bad_data);
+    cli_printf(cli, "tec %u, rec %u%s%s\r\n", st.tec, st.rec,
+               st.error_passive ? ", ERROR PASSIVE" : "",
+               st.bus_off ? ", BUS OFF" : "");
+    return CLI_OK;
+}
+
 const cli_cmd_t cli_cmds[] = {
     /* Any order works ("?" sorts its output); kept alphabetical to read easily */
+    { "can",         "can [test <n>|clear]",               "CAN counters, loopback self-test",   cmd_can         },
     { "clear_fault", "clear_fault",                        "clear a latched fault",              cmd_clear_fault },
     { "heap",        "heap",                               "FreeRTOS heap use",                  cmd_heap        },
     { "jitter",      "jitter [clear]",                     "control tick timing (DWT)",          cmd_jitter      },
