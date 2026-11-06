@@ -31,7 +31,7 @@ A camera mounted to a motor that tracks and centers an AprilTag (pan-only).
 ## Milestones
 | # | Goal | Done when | Status |
 |---|---|---|---|
-| 1 | Bring-up | Camera at 720p60 ±1 fps for 60 s with no drops. Nucleo 1 kHz timer ISR with jitter p99 < 2 µs. FDCAN internal loopback, 10k frames, 0 errors. CI green. | Camera done |
+| 1 | Bring-up | Camera at 720p60 ±1 fps for 60 s with no drops. Nucleo 1 kHz timer ISR with jitter p99 < 2 µs. FDCAN internal loopback, 10k frames, 0 errors. CI green. | All but CI |
 | 2 | CAN link + closed loop | Jetson and Nucleo talk over CAN at 1 Mbps. Motor holds a commanded angle within ±1°. Heartbeat loss turns PWM off within 50 ms (scope). | |
 | 3 | Safety + control | E-stop cuts power and latches a fault. Current limit trips on stall. Watchdog reset recovers safely. Velocity and position loops tuned. UDP telemetry with no drops. Step response and jitter plots from scripts. | |
 | 4 | ROS 2 pipeline | Camera -> AprilTag -> tracker -> CAN bridge. Tracks a tag moving on a monitor. Tracking error plot. | |
@@ -48,7 +48,7 @@ A camera mounted to a motor that tracks and centers an AprilTag (pan-only).
 - [x] Nucleo: clocks, UART, blink
 - [x] Nucleo: 1 kHz timer ISR, DWT jitter stats (±153 ns under load)
 - [x] Nucleo: Saleae jitter capture, p99 1.1 µs idle and loaded (`tools/jitter.py`)
-- [ ] FDCAN internal loopback
+- [x] FDCAN internal loopback: 1M frames, 0 lost, 0 corrupted, 0 errors
 
 ## Results targets
 | Metric | Target | How it's measured |
