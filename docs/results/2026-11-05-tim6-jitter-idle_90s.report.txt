@@ -1,0 +1,11 @@
+file:       2026-11-05-tim6-jitter-idle_90s.csv
+edges:      90225, periods 90224, over 90.008 s
+anomalies:  0 (more than 10% off the median, left out)
+
+period:     mean 997.602 us, median 997.600 us, min 995.780 us, max 999.400 us
+rate:       +2398 ppm vs ideal 1000.000 us (+ = fast)
+
+jitter (deviation from the mean period):
+  range     -1822 ns / +1798 ns, peak-to-peak 3620 ns
+  std       444 ns
+  |dev| p50 302 ns, p99 1112 ns, p99.9 1408 ns
