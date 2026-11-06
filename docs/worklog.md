@@ -36,7 +36,28 @@ Saleae (Logic 8, 100 MS/s, D2/PG14 + GND, jumper wire, no soldering), 90 s each,
 - Doesn't line up with the DWT yet: Saleae shows a flat ±1.1 µs spread no matter the load (DWT says ±153 ns), and the rate moves between captures (+783 ppm in a quick look earlier, then +2398, +2895). TIM6 is hardware-driven, so its rate can't change with load.
 - Best guess: the board clock. HSE is the ST-LINK's MCO output (bypass), not a crystal. The DWT counts that same clock, so it can't see its own source wandering; the Saleae can. Not confirmed. Parked for later.
 
+FDCAN loopback:
+- FDCAN1 in CubeMX: classic CAN, internal loopback (TX wired to RX inside the chip, no pins or transceiver needed). Kernel clock 130 MHz from PLL1Q. 1 Mbps = prescaler 5, seg1 20, seg2 5 (26 time quanta, 80.8% sample point). Classic over FD: 8 bytes fits a setpoint plus a counter, and every transceiver and USB-CAN adapter speaks it.
+- Pins moved to PD0/PD1 (the Nucleo's CAN pins on the Zio connector). CubeMX put them on PA11/PA12 first, which is the user USB port.
+- Message RAM: 1 standard filter, RX FIFO0 16 deep, TX FIFO 16 deep, 8-byte elements. Filter is a mask of 0 (accept every standard id into FIFO0); the global filter rejects everything else and remote frames.
+- `app/can.c`: start, send, stats, loopback self-test. RX callback registered before `HAL_FDCAN_Start()`, same rule as TIM6. FDCAN1 interrupt at priority 6, so it can use FromISR calls; TIM6 stays at 4 above it.
+- RX ISR drains FIFO0 in a loop: the interrupt fires per new frame, not per frame waiting, so reading one per interrupt would strand the rest. Bounded by the FIFO depth. For real traffic in milestone 2 this moves to a task (ISR notifies, task drains and publishes).
+- Self-test is ping-pong: one frame in flight, each RX queues the next TX. Payload is the sequence number plus its bitwise NOT, so the ISR counts lost frames (seq jumps) and corrupted ones (halves don't match). The CAN CRC already covers the wire; this catches my own RX-path bugs.
+- `can_get_stats()` copies the counters inside a critical section so the CLI never sees a half-updated set; TEC/REC and error passive/bus off come straight from the controller.
+- CLI `can [test <n>|clear]`.
+
+| Run | TX | RX | Lost | Corrupted | TX FIFO full | TEC / REC |
+|---|---|---|---|---|---|---|
+| 10k frames | 10,000 | 10,000 | 0 | 0 | 0 | 0 / 0 |
+| 1M frames | 1,000,000 | 1,000,000 | 0 | 0 | 0 | 0 / 0 |
+
+- Milestone 1 CAN item done (target was 10k frames, 0 errors). Raw output in `docs/results/2026-11-05-fdcan-loopback.txt`.
+- Read: ST [AN5348](https://www.st.com/resource/en/application_note/dm00625700-fdcan-peripheral-on-stm32-devices-stmicroelectronics.pdf) (FDCAN on STM32), RM0468 FDCAN chapter, TI [SLOA101](https://www.ti.com/lit/SLOA101) (CAN basics).
+
 Saved for next time:
+- FDCAN Nominal Sync Jump Width is still 1 in CubeMX, set it to 5 (= seg2) before talking to a real node
+- Time a long `can test` run (ping-pong rate should be ~7k frames/s at 1 Mbps if the bit timing is right)
+- CI: host tests + cross-compile (last milestone 1 item)
 - Clock check: `uptime` vs Mac clock over 30-60 min (+2400 ppm = ~4.3 s per 30 min). Then LSE (32.768 kHz crystal) out on MCO1/PA8, capture with the Saleae: if that reads clean, it's the HSE, not the Saleae.
 - Liveness check in the supervisor (tick count must advance ~10 per 10 ms, else FAULT)
 - `clear_fault` as a message

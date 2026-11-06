@@ -20,6 +20,7 @@ Safety:
 - [x] STM32 task framework: pub/sub messaging, startup sync, supervisor skeleton, LED task
 - [x] 1 kHz control tick on TIM6: ±153 ns jitter under load (DWT min/max)
 - [x] Jitter p99 from a Saleae capture: 1.1 µs idle and loaded
+- [x] FDCAN internal loopback: 1M frames, 0 lost, 0 errors
 - [ ] CAN link to the Jetson
 - [ ] Motor, encoder, current sense
 - [ ] Safety: e-stop, heartbeat, watchdog

@@ -11,11 +11,11 @@ STM32H723 (NUCLEO-H723ZG) firmware for the pan axis. Skeleton from [plan.md](pla
 ## Hardware interfaces
 | Function | Peripheral | Pins | Notes |
 |---|---|---|---|
-| Control tick | TIM6 (basic timer), 1 kHz | - | TBD: PSC/ARR from APB1 timer clock |
+| Control tick | TIM6 (basic timer), 1 kHz | - | PSC 259, ARR 999 from the 260 MHz APB1 timer clock |
 | Motor PWM | TBD timer, 20 kHz | TBD | VNH5019 INA/INB/PWM |
 | Encoder | TBD timer in encoder mode | TBD | goBILDA 5203, ~752 counts/output rev |
 | Motor current | ADC | TBD | VNH5019 CS pin |
-| CAN | FDCAN1, classic 2.0A, 1 Mbps | PD0 (RX), PD1 (TX) | external transceiver |
+| CAN | FDCAN1, classic 2.0A, 1 Mbps | PD0 (RX), PD1 (TX) | external transceiver. Kernel 130 MHz (PLL1Q), prescaler 5, 26 tq, 80.8% sample point. Internal loopback for now |
 | Telemetry | ETH (RMII) | on-board PHY | |
 | Console/log | USART3, 115200 8N1 | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
 | E-stop input | GPIO/EXTI | TBD | |
@@ -42,7 +42,7 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 | log | task | event | LOW | only owner of log sinks (UART TX today) | everyone |
 | init | task, runs once | boot | default | create tasks, wait at the sync point, release them, delete itself | - |
 
-Status: init, log, cli, msg, led, supervisor, control tick running. Others are placeholders.
+Status: init, log, cli, msg, led, supervisor, control tick running. CAN runs in internal loopback with a self-test driven from its RX ISR (no host_comms task yet). Others are placeholders.
 
 ### Task creation
 - One table in `app/task_init.c` (function, name, stack bytes, param, priority, handle, sync). Priorities come from `task_priority_t` in `task_init.h` (LOW/NORMAL/HIGH/SUMMIT).
@@ -89,6 +89,16 @@ Rules:
 - Full queues drop and count: bus full, unrouted (no subscriber), and per subscriber. CLI `msgs` shows them.
 - Rule: the 1 kHz control path stays off the bus (extra hop and copy). Control shares data through variables.
 
+## CAN
+- `app/can.c/.h` wraps FDCAN1. CubeMX owns the peripheral config (`Core/Src/fdcan.c`); `can.c` owns the filters, TX/RX, counters, and the loopback self-test.
+- Start order: filter, global filter, register the RX FIFO0 callback, enable the notification, start. Register before start, same as TIM6.
+- One filter today: mask 0, every standard id into RX FIFO0. Everything else and remote frames are rejected by the global filter. Milestone 2 swaps it for filters on the protocol's ids only.
+- RX ISR (priority 6) drains FIFO0 in a loop bounded by the FIFO depth. The interrupt fires per new frame, not per frame waiting.
+- `can_send()` doesn't log: it runs in the ISR during the self-test, and a full TX FIFO is normal under load (counted as `tx_full`).
+- Counters are written by the RX callback and `can_send()`. `can_get_stats()` copies them in a critical section (masks the FDCAN interrupt) so readers get a consistent set.
+- Self-test (`can test <n>`): ping-pong, one frame in flight, payload = seq + bitwise NOT of seq. Counts lost frames (seq jumps) and corrupted ones (halves disagree).
+- Milestone 2: ISR notifies a host_comms task that drains FIFO0, decodes, and posts setpoints/heartbeat on the message bus (top half / bottom half).
+
 ## Interrupt priorities
 | Priority | Who | Can call FreeRTOS? |
 |---|---|---|
@@ -96,7 +106,8 @@ Rules:
 | TBD (0-4) | e-stop | no |
 | 5 | configMAX_SYSCALL_INTERRUPT_PRIORITY: FreeRTOS critical sections mask 5-15 (BASEPRI) | - |
 | 6 | USART3 (CLI RX) | yes (FromISR) |
-| TBD (5+) | FDCAN, ETH | yes (FromISR) |
+| 6 | FDCAN1 interrupt 0 (RX FIFO0) | yes (FromISR) |
+| TBD (5+) | ETH | yes (FromISR) |
 | 15 | TIM17 (HAL timebase), SysTick/PendSV (kernel) | - |
 
 Why TIM6 is at 4: at 5 it was inside the BASEPRI mask, so every kernel critical section (queue copies, timer commands, the LED fade callback) could delay the tick. Measured worst case under load: ±946 ns at 5, ±153 ns at 4 (I-cache on). See worklog 2026-11-05.
@@ -136,7 +147,7 @@ Read: AN4891 (bus matrix, TCM, where code/data should go), AN4839 (L1 cache), AN
 ## Code layout
 ```
 firmware/
-  lib/       portable code, host-tested (pid)
+  lib/       portable code, host-tested (pid, cli, led_fade)
   tests/     Unity host tests
   nucleo/    CubeMX-generated BSP (Core/, Drivers/, Middlewares/, .ioc) + app/
     app/     my board code (HAL + FreeRTOS), flat: .h next to .c
