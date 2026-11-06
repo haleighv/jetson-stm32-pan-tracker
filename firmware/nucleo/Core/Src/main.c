@@ -20,6 +20,7 @@
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "fdcan.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -103,6 +104,7 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM6_Init();
   MX_USART3_UART_Init();
+  MX_FDCAN1_Init();
   /* USER CODE BEGIN 2 */
   printf("| ---- BOOT %s (%s) %s ---- |\r\n", FW_VERSION_STR, FW_GIT_DESCRIBE, FW_BUILD_TYPE);
   /* USER CODE END 2 */
