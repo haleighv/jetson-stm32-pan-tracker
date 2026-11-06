@@ -2,6 +2,47 @@
 
 A rolling log for the project's work.
 
+## 2026-11-05
+- Control tick running: TIM6 at 1 kHz in `app/control.c`, callback registered with `HAL_TIM_RegisterCallback()` (CubeMX: TIM register callbacks on) so `main.c` stays untouched. Register before `HAL_TIM_Base_Start_IT()`: HAL only takes callbacks while the timer is READY.
+- Supervisor starts it after `task_sync()`. Scope pin PG14 toggles every tick.
+- Period measured in the ISR with the DWT cycle counter (520,000 cycles = 1 ms). ISR is the only writer; `jitter clear` just sets a flag the ISR acts on.
+- CLI `jitter [clear]`: min/max period in cycles, deviation from 1 ms in ns, and when the min/max happened (ticks since start, in s). The "when" is what made the spikes traceable.
+- Boot always delayed one tick by the same amount (±1.15 µs, identical every boot): tasks finishing init plus the log burst. Supervisor now restarts the stats 1 s after the tick starts so `jitter` shows steady state.
+- Sync log order fixed: tasks log "waiting" before checking in, otherwise the higher-priority init task prints "all initialized" first.
+
+Jitter, DWT min/max over ~30-60 s windows after warm-up:
+
+| Config | Idle | 3 LED fades + debug logging |
+|---|---|---|
+| I-cache off, TIM6 prio 5 | ±96 ns (spikes to ±6 µs while typing) | ±7.8 µs |
+| I-cache on, TIM6 prio 5 | ±153 ns | ±946 ns |
+| I-cache on, TIM6 prio 4 | ±153 ns | ±153 ns |
+
+- I-cache on: worst case under load ±7.8 µs -> ±0.95 µs. Without it the code runs straight from flash with wait states.
+- With the cache on, the remaining ±946 ns spike lined up with an `led` command ("max at 21.869 s" next to `[21.871] D led: led 1 fade`). Handling it enters kernel critical sections (timer commands, queue copies), and FreeRTOS masks priorities 5-15 with BASEPRI during those.
+- TIM6 at priority 4 (unticked "Uses FreeRTOS functions" in CubeMX NVIC): above the mask, so load no longer matters. Cost: no FreeRTOS calls of any kind in that ISR. Comment at the ISR says so.
+- ±153 ns (~80 cycles) left is interrupt entry variation. Keeping I-cache on, TIM6 at 4. D-cache still off.
+- Caveat: min/max over short windows is noisy. Still need a long run and Saleae p99.
+
+Saleae (Logic 8, 100 MS/s, D2/PG14 + GND, jumper wire, no soldering), 90 s each, I-cache on, TIM6 prio 4:
+
+| Capture | Periods | Anomalies | Rate | std | p99 \|dev\| | p99.9 | max |
+|---|---|---|---|---|---|---|---|
+| idle | 90,224 | 0 | +2398 ppm | 444 ns | 1112 ns | 1408 ns | 1822 ns |
+| 3 LED fades + debug logging | 90,337 | 0 | +2895 ppm | 443 ns | 1115 ns | 1425 ns | 1825 ns |
+
+- p99 1.1 µs, under the 2 µs target, idle and loaded. No missed ticks.
+- `tools/jitter.py`: jitter is measured against the mean period, not 1 ms, so a rate offset doesn't count as jitter. `-d docs/results` writes `<name>.report.txt` next to each CSV plus a summary table. Raw CSVs and reports in `docs/results/`.
+- Doesn't line up with the DWT yet: Saleae shows a flat ±1.1 µs spread no matter the load (DWT says ±153 ns), and the rate moves between captures (+783 ppm in a quick look earlier, then +2398, +2895). TIM6 is hardware-driven, so its rate can't change with load.
+- Best guess: the board clock. HSE is the ST-LINK's MCO output (bypass), not a crystal. The DWT counts that same clock, so it can't see its own source wandering; the Saleae can. Not confirmed. Parked for later.
+
+Saved for next time:
+- Clock check: `uptime` vs Mac clock over 30-60 min (+2400 ppm = ~4.3 s per 30 min). Then LSE (32.768 kHz crystal) out on MCO1/PA8, capture with the Saleae: if that reads clean, it's the HSE, not the Saleae.
+- Liveness check in the supervisor (tick count must advance ~10 per 10 ms, else FAULT)
+- `clear_fault` as a message
+- SSH key login
+- Check for MAXN SUPER
+
 ## 2026-11-04
 - Tagged v0.1.0. `version` shows `0.1.0 (v0.1.0) Debug`.
 - Baseline before adding tasks: heap 38 KB free of 48 KB (35.6 KB min ever). Stack free: cli 580 words, log 416, IDLE 90.

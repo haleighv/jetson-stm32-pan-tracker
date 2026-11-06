@@ -18,7 +18,8 @@ Safety:
 - [x] PID controller with host unit tests (anti-windup, no derivative kick, NaN-safe config)
 - [x] STM32 bring-up: 520 MHz, FreeRTOS, task table, queued leveled logging, UART CLI
 - [x] STM32 task framework: pub/sub messaging, startup sync, supervisor skeleton, LED task
-- [ ] 1 kHz control tick + jitter measurement
+- [x] 1 kHz control tick on TIM6: ±153 ns jitter under load (DWT min/max)
+- [x] Jitter p99 from a Saleae capture: 1.1 µs idle and loaded
 - [ ] CAN link to the Jetson
 - [ ] Motor, encoder, current sense
 - [ ] Safety: e-stop, heartbeat, watchdog
@@ -32,7 +33,7 @@ Coming soon
 | Metric | Target (Day 0 estimate) | Measured |
 |---|---|---|
 | Photon-to-motion latency, p50 / p90 | < 60 / 80 ms | TBD |
-| Control-loop period jitter, p99 | < 2 µs | TBD |
+| Control-loop period jitter, p99 | < 2 µs | 1.1 µs (Saleae, 90 s, idle and loaded) |
 | Step response (30°): rise time / overshoot | < 100 ms / < 10 % | TBD |
 | Heartbeat-loss → motor disabled | ≤ 50 ms | TBD |
 

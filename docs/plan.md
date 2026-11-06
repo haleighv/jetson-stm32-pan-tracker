@@ -46,7 +46,8 @@ A camera mounted to a motor that tracks and centers an AprilTag (pan-only).
 - [x] PID on the host with unit tests
 - [ ] CI: host tests + cross-compile
 - [x] Nucleo: clocks, UART, blink
-- [ ] Nucleo: 1 kHz timer ISR, jitter capture
+- [x] Nucleo: 1 kHz timer ISR, DWT jitter stats (±153 ns under load)
+- [x] Nucleo: Saleae jitter capture, p99 1.1 µs idle and loaded (`tools/jitter.py`)
 - [ ] FDCAN internal loopback
 
 ## Results targets

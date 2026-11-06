@@ -30,7 +30,7 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 
 | Context | Type | Rate | Priority | Does | Talks to |
 |---|---|---|---|---|---|
-| control | TIM6 ISR | 1 kHz | TBD (moves above the syscall limit later) | encoder -> PID -> PWM, current check, push telemetry sample | supervisor, telemetry (lock-free) |
+| control | TIM6 ISR | 1 kHz | NVIC 4 (above the syscall limit, no FreeRTOS calls) | encoder -> PID -> PWM, current check, push telemetry sample. Today: tick count, DWT period stats, scope pin | supervisor, telemetry (variables, single writer) |
 | estop | EXTI ISR | event | TBD | PWM off, latch fault | supervisor |
 | msg | task (dispatcher) | event | SUMMIT | copy each posted message to its subscribers | everyone (bus) |
 | supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG | all (bus), led |
@@ -42,7 +42,7 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 | log | task | event | LOW | only owner of log sinks (UART TX today) | everyone |
 | init | task, runs once | boot | default | create tasks, wait at the sync point, release them, delete itself | - |
 
-Status: init, log, cli, msg, led, supervisor running. control is configured (TIM6), not started. Others are placeholders.
+Status: init, log, cli, msg, led, supervisor, control tick running. Others are placeholders.
 
 ### Task creation
 - One table in `app/task_init.c` (function, name, stack bytes, param, priority, handle, sync). Priorities come from `task_priority_t` in `task_init.h` (LOW/NORMAL/HIGH/SUMMIT).
@@ -92,13 +92,16 @@ Rules:
 ## Interrupt priorities
 | Priority | Who | Can call FreeRTOS? |
 |---|---|---|
-| TBD | control ISR, e-stop | no |
-| TBD | configMAX_SYSCALL_INTERRUPT_PRIORITY | - |
-| TBD | FDCAN, ETH, USART3 RX | yes (FromISR) |
+| 4 | TIM6 (control tick) | no |
+| TBD (0-4) | e-stop | no |
+| 5 | configMAX_SYSCALL_INTERRUPT_PRIORITY: FreeRTOS critical sections mask 5-15 (BASEPRI) | - |
+| 6 | USART3 (CLI RX) | yes (FromISR) |
+| TBD (5+) | FDCAN, ETH | yes (FromISR) |
+| 15 | TIM17 (HAL timebase), SysTick/PendSV (kernel) | - |
 
-Current:
-- TIM6 at 5, the highest priority that can still call FreeRTOS FromISR APIs (`configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY` = 5).
-- USART3 at 6, below TIM6, so typing can't delay the control tick.
+Why TIM6 is at 4: at 5 it was inside the BASEPRI mask, so every kernel critical section (queue copies, timer commands, the LED fade callback) could delay the tick. Measured worst case under load: ±946 ns at 5, ±153 ns at 4 (I-cache on). See worklog 2026-11-05.
+
+Rule: anything at 0-4 never calls FreeRTOS, not even FromISR. It hands data to tasks through variables with a single writer. configASSERT catches violations.
 
 ## State machine
 BOOT -> IDLE -> ARMED -> FAULT
@@ -116,13 +119,16 @@ In FAULT: PWM off, red LED (LD3) via the LED task, fault cause logged and report
 ## Memory
 - FreeRTOS heap_4, 48 KB. Allocate only during init, never after boot.
 - Log queue: 32 x ~130 bytes ≈ 4 KB.
-- TBD: control ISR code in ITCM, its data in DTCM.
+- I-cache on. Cut control-tick worst case under load from ±7.8 µs to ±0.95 µs (TIM6 at 5).
+- D-cache off for now. Turning it on needs the DMA buffers handled first (non-cacheable MPU region or cache maintenance).
+- TBD: control ISR code in ITCM, its data in DTCM, if the ±153 ns floor ever matters.
 - TBD: Ethernet DMA buffers in a non-cacheable MPU region.
 
 Read: AN4891 (bus matrix, TCM, where code/data should go), AN4839 (L1 cache), AN4838 (MPU), ES0491 (errata).
 
 ## Clocks and timebase
 - HSE 8 MHz from the ST-LINK (bypass) -> PLL1 -> SYSCLK 520 MHz, VOS0. Same 520 MHz as ST's FreeRTOS example.
+- Open question: the Saleae measures the 1 kHz tick +2400 to +2900 ppm fast and varying between captures, with ±1.1 µs p99 spread vs ±153 ns from the DWT. The DWT can't see its own clock source wandering, so the ST-LINK MCO is the suspect. Options if confirmed: fit the board's optional HSE crystal (UM2407), or document the limit.
 - AHB 260 MHz, APB 130 MHz, APB1 timer clock 260 MHz.
 - FreeRTOS owns SysTick (1 kHz tick). HAL timebase on TIM17.
 - TIM6: PSC 259, ARR 999 -> 1 MHz counter (1 µs per count), 1 kHz update.
