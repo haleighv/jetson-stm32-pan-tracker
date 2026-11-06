@@ -1,0 +1,10 @@
+capture: 2026-11-06-can-echo-10k.csv.gz
+frames: 20000 (10000 round trips), span 3.550 s, bit rate 1000000 (min idle between frames 11 bits)
+
+turnaround = gap after a frame minus the 11-bit minimum idle:
+Jetson (echo)          n=10000  min     92.0  p50    105.0  p90    120.0  p99    215.0  p99.9    346.0  max   1794.0 us
+Nucleo (next frame)    n=9999   min      1.9  p50      1.9  p90      1.9  p99      2.0  p99.9      2.9  max      3.0 us
+
+round trip (SOF->SOF)  n=9999   min    332.0  p50    349.9  p90    364.8  p99    459.0  p99.9    593.9  max   2039.9 us
+frame (SOF->ACK)       n=20000  min    107.8  p50    110.1  p90    112.1  p99    114.1  p99.9    115.2  max    116.2 us
+mean round trip 355.0 us (2817 round trips/s)
