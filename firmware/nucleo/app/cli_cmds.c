@@ -252,6 +252,35 @@ static cli_status_t cmd_can(cli_t *cli, int argc, char **argv)
         cli_printf(cli, "can stats cleared\r\n");
         return CLI_OK;
     }
+    if (argc == 4 && strcmp(argv[1], "send") == 0) {
+        char *end;
+        unsigned long id = strtoul(argv[2], &end, 16);
+        if (*end != '\0' || id > 0x7FF) {
+            return CLI_ERR_ARGS;
+        }
+
+        /* "DEADBEEF" -> DE AD BE EF: two hex chars per byte, 0..8 bytes */
+        size_t hex_len = strlen(argv[3]);
+        if (hex_len % 2 != 0 || hex_len > 16) {
+            return CLI_ERR_ARGS;
+        }
+        uint8_t data[8];
+        uint8_t len = (uint8_t)(hex_len / 2);
+        for (uint8_t i = 0; i < len; i++) {
+            char byte[3] = { argv[3][2 * i], argv[3][2 * i + 1], '\0' };
+            data[i] = (uint8_t)strtoul(byte, &end, 16);
+            if (*end != '\0') {
+                return CLI_ERR_ARGS;    /* not a hex digit */
+            }
+        }
+
+        if (can_send((uint32_t)id, data, len)) {
+            cli_printf(cli, "sent %03lX [%u]\r\n", id, len);
+        } else {
+            cli_printf(cli, "tx fifo full\r\n");
+        }
+        return CLI_OK;
+    }
     if (argc != 1) {
         return CLI_ERR_ARGS;
     }
