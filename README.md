@@ -24,7 +24,7 @@ Safety:
 - [x] Jitter p99 from a Saleae capture: 1.1 µs idle and loaded
 - [x] FDCAN internal loopback: 1M frames, 0 lost, 0 errors
 - [x] CI: host tests + firmware build on every push, elf/map kept per commit
-- [ ] CAN link to the Jetson
+- [x] CAN bus to the Jetson at 1 Mbps: both directions, 0 errors
 - [ ] Motor, encoder, current sense
 - [ ] Safety: e-stop, heartbeat, watchdog
 - [ ] ROS 2 tracking pipeline

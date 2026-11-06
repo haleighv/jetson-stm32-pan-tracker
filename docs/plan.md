@@ -32,7 +32,7 @@ A camera mounted to a motor that tracks and centers an AprilTag (pan-only).
 | # | Goal | Done when | Status |
 |---|---|---|---|
 | 1 | Bring-up | Camera at 720p60 ±1 fps for 60 s with no drops. Nucleo 1 kHz timer ISR with jitter p99 < 2 µs. FDCAN internal loopback, 10k frames, 0 errors. CI green. | Done |
-| 2 | CAN link + closed loop | Jetson and Nucleo talk over CAN at 1 Mbps. Motor holds a commanded angle within ±1°. Heartbeat loss turns PWM off within 50 ms (scope). | |
+| 2 | CAN link + closed loop | Jetson and Nucleo talk over CAN at 1 Mbps. Motor holds a commanded angle within ±1°. Heartbeat loss turns PWM off within 50 ms (scope). | CAN link up |
 | 3 | Safety + control | E-stop cuts power and latches a fault. Current limit trips on stall. Watchdog reset recovers safely. Velocity and position loops tuned. UDP telemetry with no drops. Step response and jitter plots from scripts. | |
 | 4 | ROS 2 pipeline | Camera -> AprilTag -> tracker -> CAN bridge. Tracks a tag moving on a monitor. Tracking error plot. | |
 | 5 | Measurement + HIL | Latency p50/p90 with a per-stage breakdown. HIL tests for missed heartbeat, bad CRC/counter, out-of-range setpoint, bus-off. CAN spec v1.0. Design doc. | |
