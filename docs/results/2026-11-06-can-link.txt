@@ -1,0 +1,45 @@
+# CAN bus, Jetson Orin Nano (J17) <-> NUCLEO-H723ZG, plus CANable as a third node
+# Captured: 2026-11-06
+# Bus:      classic CAN, 1 Mbps. Nucleo FDCAN1: 130 MHz kernel, 26 tq, 80.8% sample point,
+#           SJW 5, Normal mode. Jetson mttcan: 50 MHz clock, 50 tq, 80% sample point, SJW 5.
+#           SN65HVD230 transceiver on each end (120 ohm each), CANable in the middle
+#           (termination off). 59.6 ohm across CAN-H/CAN-L with power off.
+#           Idle bus: CAN-H 2.22 V, CAN-L 2.22 V (recessive).
+# Summary:  Jetson -> Nucleo 1,001 frames (1 + cangen burst of 1000), Nucleo rx 1001,
+#           TEC/REC 0. Nucleo -> Jetson 1 frame (id 0x7F0), Jetson RX packets 1.
+#           0 errors on either side.
+# Earlier (external loopback, Saleae on PD1): frames decode as id 0x7F0 + seq/NOT-seq payload,
+#           5-bit run = 4.99 us, 6-bit run = 5.99 us (1 Mbps), ~127 us frame to frame,
+#           ~7,900 frames/s ping-pong, ISR turnaround to next TX ~1-4 us.
+# Raw output follows.
+
+## Jetson
+$ ip -details link show can0
+3: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can  promiscuity 0  allmulti 0 minmtu 0 maxmtu 0
+    can <BERR-REPORTING> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 100
+	  bitrate 1000000 sample-point 0.800
+	  tq 20 prop-seg 19 phase-seg1 20 phase-seg2 10 sjw 5 brp 1
+	  clock 50000000
+
+$ cansend can0 123#DEADBEEF
+$ cangen can0 -g 1 -n 1000 -I 123 -L 8
+$ candump -e can0
+  can0  7F0   [8]  00 00 00 00 FF FF FF FF
+
+$ ip -s link show can0
+3: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can
+    RX:  bytes packets errors dropped  missed   mcast
+             8       1      0       0       0       0
+    TX:  bytes packets errors dropped carrier collsns
+          8004    1001      0       0       0       0
+
+## Nucleo
+> can
+test idle
+tx 0, tx_full 0
+rx 1001, seq_gaps 0, bad_data 0
+tec 0, rec 0
+> can test 1
+test started, 1 frames

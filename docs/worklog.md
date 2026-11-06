@@ -2,6 +2,31 @@
 
 A rolling log for the project's work.
 
+## 2026-11-06
+CAN bus between the Jetson and the Nucleo:
+- Bus: Nucleo and Jetson at the two ends, each with an SN65HVD230 (3.3 V, 120 Ω on board). CANable in the middle with its termination off. 59.6 Ω across CAN-H/CAN-L with power off. GND wire between the Nucleo and Jetson sides (Nucleo is grounded through the Mac's USB, the Jetson through its own supply).
+- Jetson J17: soldered a 1×4 header, broken out of the case on jumpers. Bring-up is `tools/jetson/can_up.sh`: pinmux (two registers, values from NVIDIA's CAN guide, lost on every reboot, so the script reads them back), `can`/`can_raw`/`mttcan` modules, 1 Mbps, 80% sample point, `restart-ms 100`, bus error reporting.
+- J17 pin order: the carrier board spec and NVIDIA's CAN guide disagree on which of pins 1/2 is TX. Checked on the bench instead: with the bus idle, the transceiver drives RX high; a J17 RX pin sitting low means the controller sees a busy bus and never starts sending (no errors either, the frame just sits in the queue).
+- Nucleo pins on the CN9 Zio connector: PD1 (TX) pin 27, PD0 (RX) pin 25, GND pin 23, 3V3 on CN8 pin 7. Checked PD1 first in external loopback with the Saleae before wiring the transceiver: frames decode (id 0x7F0, seq + inverted seq), 5-bit run 4.99 µs, 6-bit run 5.99 µs, so 1 Mbps. Frame to frame ~127 µs (~7,900 frames/s), and the RX ISR turns around the next TX in ~1-4 µs.
+- FDCAN now in Normal mode, SJW 5 (= seg2). Jetson side picks 50 tq at its 50 MHz clock, SJW 5, 80% sample point vs the Nucleo's 80.8%.
+
+| Direction | Frames | Errors |
+|---|---|---|
+| Jetson -> Nucleo | 1,001 (1 + `cangen` burst of 1000) | Nucleo TEC/REC 0 |
+| Nucleo -> Jetson | 1 (`can test 1`, id 0x7F0) | Jetson 0 errors, 0 dropped |
+
+- Nucleo REC read 4 right after the Jetson rebooted (J17 glitches while the pins get reconfigured). It counts back down by 1 per good frame and was 0 after the burst.
+- Raw output in `docs/results/2026-11-06-can-link.txt`.
+- Also: SSH key login to the Jetson (`ssh jetson`).
+
+Saved for next time:
+- Saleae on the real bus: ACK slot should read true now (it can't in loopback)
+- `can send <id> <hex>` CLI command
+- `tools/can_echo.py` on the Jetson, then `can test 10000` over the real bus
+- Fault injection: pull CAN-H, watch error passive / bus off on both sides. Nucleo needs software to recover from bus off (`restart-ms` covers the Jetson)
+- `hardware/can-wiring.md`
+- Clock check, supervisor liveness check, `clear_fault` as a message, MAXN SUPER
+
 ## 2026-11-05
 - Control tick running: TIM6 at 1 kHz in `app/control.c`, callback registered with `HAL_TIM_RegisterCallback()` (CubeMX: TIM register callbacks on) so `main.c` stays untouched. Register before `HAL_TIM_Base_Start_IT()`: HAL only takes callbacks while the timer is READY.
 - Supervisor starts it after `task_sync()`. Scope pin PG14 toggles every tick.
@@ -61,12 +86,9 @@ CI:
 - Both jobs green. That closes milestone 1.
 
 Saved for next time:
-- FDCAN Nominal Sync Jump Width is still 1 in CubeMX, set it to 5 (= seg2) before talking to a real node
-- Time a long `can test` run (ping-pong rate should be ~7k frames/s at 1 Mbps if the bit timing is right)
 - Clock check: `uptime` vs Mac clock over 30-60 min (+2400 ppm = ~4.3 s per 30 min). Then LSE (32.768 kHz crystal) out on MCO1/PA8, capture with the Saleae: if that reads clean, it's the HSE, not the Saleae.
 - Liveness check in the supervisor (tick count must advance ~10 per 10 ms, else FAULT)
 - `clear_fault` as a message
-- SSH key login
 - Check for MAXN SUPER
 
 ## 2026-11-04

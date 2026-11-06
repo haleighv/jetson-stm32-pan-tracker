@@ -15,7 +15,7 @@ STM32H723 (NUCLEO-H723ZG) firmware for the pan axis. Skeleton from [plan.md](pla
 | Motor PWM | TBD timer, 20 kHz | TBD | VNH5019 INA/INB/PWM |
 | Encoder | TBD timer in encoder mode | TBD | goBILDA 5203, ~752 counts/output rev |
 | Motor current | ADC | TBD | VNH5019 CS pin |
-| CAN | FDCAN1, classic 2.0A, 1 Mbps | PD0 (RX), PD1 (TX) | external transceiver. Kernel 130 MHz (PLL1Q), prescaler 5, 26 tq, 80.8% sample point. Internal loopback for now |
+| CAN | FDCAN1, classic 2.0A, 1 Mbps | PD0 (RX), PD1 (TX) | external transceiver. Kernel 130 MHz (PLL1Q), prescaler 5, 26 tq, 80.8% sample point, SJW 5. Normal mode, on the bus with the Jetson (J17) |
 | Telemetry | ETH (RMII) | on-board PHY | |
 | Console/log | USART3, 115200 8N1 | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
 | E-stop input | GPIO/EXTI | TBD | |
@@ -42,7 +42,7 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 | log | task | event | LOW | only owner of log sinks (UART TX today) | everyone |
 | init | task, runs once | boot | default | create tasks, wait at the sync point, release them, delete itself | - |
 
-Status: init, log, cli, msg, led, supervisor, control tick running. CAN runs in internal loopback with a self-test driven from its RX ISR (no host_comms task yet). Others are placeholders.
+Status: init, log, cli, msg, led, supervisor, control tick running. CAN is on the bus with the Jetson (Normal mode); the self-test is driven from the RX ISR (no host_comms task yet). Others are placeholders.
 
 ### Task creation
 - One table in `app/task_init.c` (function, name, stack bytes, param, priority, handle, sync). Priorities come from `task_priority_t` in `task_init.h` (LOW/NORMAL/HIGH/SUMMIT).
