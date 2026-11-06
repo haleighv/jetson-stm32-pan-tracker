@@ -11,17 +11,18 @@
  */
 #include "cli_cmds.h"
 #include "log.h"
+#include "version.h"
+#include "control.h"
+#include "msg.h"
+#include "task_led.h"
+#include "task_supervisor.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "version.h"
-#include "task_supervisor.h"
-#include "task_led.h"
-#include "msg.h"
-#include <stdlib.h>
 
 #define TASKS_MAX   16      /* rows "tasks" can show */
 
@@ -29,8 +30,8 @@ static cli_status_t cmd_version(cli_t *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-      cli_printf(cli, "%s (%s) %s, built %s %s\r\n",
-             FW_VERSION_STR, FW_GIT_DESCRIBE, FW_BUILD_TYPE, __DATE__, __TIME__);
+    cli_printf(cli, "%s (%s) %s, built %s %s\r\n",
+               FW_VERSION_STR, FW_GIT_DESCRIBE, FW_BUILD_TYPE, __DATE__, __TIME__);
     return CLI_OK;
 }
 
@@ -161,16 +162,17 @@ static cli_status_t cmd_reset(cli_t *cli, int argc, char **argv)
     return CLI_OK;          /* not reached */
 }
 
-static cli_status_t state(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_state(cli_t *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
     supervisor_state_t s = supervisor_get_state();
-    cli_printf(cli, "state %s for %lu ms\r\n", supervisor_state_name(s), supervisor_get_state_ms());
+    cli_printf(cli, "state %s for %lu ms\r\n", supervisor_state_name(s),
+               (unsigned long)supervisor_get_state_ms());
     return CLI_OK;
 }
 
-static cli_status_t clear_fault(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_clear_fault(cli_t *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -182,18 +184,61 @@ static cli_status_t clear_fault(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
+/* Control tick timing. The ISR stores min/max period in CPU cycles; this
+ * turns it into deviation from the ideal 1 ms, in ns. Integers only
+ * (newlib-nano has no %f). "jitter clear" restarts the window. */
+static cli_status_t cmd_jitter(cli_t *cli, int argc, char **argv)
+{
+    if (argc == 2 && strcmp(argv[1], "clear") == 0) {
+        control_reset_period();
+        cli_printf(cli, "jitter stats cleared\r\n");
+        return CLI_OK;
+    }
+    if (argc != 1) {
+        return CLI_ERR_ARGS;
+    }
+
+    uint32_t min_cyc, max_cyc;
+    control_get_period(&min_cyc, &max_cyc);
+    if (min_cyc == UINT32_MAX) {
+        cli_printf(cli, "no samples yet\r\n");
+        return CLI_OK;
+    }
+
+    uint32_t ideal = SystemCoreClock / 1000U;       /* cycles per 1 ms tick */
+    uint32_t mhz   = SystemCoreClock / 1000000U;    /* cycles per us */
+
+    /* Short periods come out negative */
+    int32_t early_ns = (int32_t)((int64_t)(int32_t)(min_cyc - ideal) * 1000 / mhz);
+    int32_t late_ns  = (int32_t)((int64_t)(int32_t)(max_cyc - ideal) * 1000 / mhz);
+
+    cli_printf(cli, "period min %lu, max %lu cycles (ideal %lu)\r\n",
+               (unsigned long)min_cyc, (unsigned long)max_cyc, (unsigned long)ideal);
+    cli_printf(cli, "jitter %ld / +%ld ns, peak-to-peak %ld ns\r\n",
+               (long)early_ns, (long)late_ns, (long)(late_ns - early_ns));
+
+    /* When: ticks are ms since control_start(), about the same as uptime */
+    uint32_t min_tick, max_tick;
+    control_get_period_ticks(&min_tick, &max_tick);
+    cli_printf(cli, "min at %lu.%03lu s, max at %lu.%03lu s\r\n",
+               (unsigned long)(min_tick / 1000U), (unsigned long)(min_tick % 1000U),
+               (unsigned long)(max_tick / 1000U), (unsigned long)(max_tick % 1000U));
+    return CLI_OK;
+}
+
 const cli_cmd_t cli_cmds[] = {
     /* Any order works ("?" sorts its output); kept alphabetical to read easily */
-    { "clear_fault", "clear_fault",                       "clear any fault conditions",        clear_fault  },
-    { "heap",        "heap",                              "FreeRTOS heap use",                 cmd_heap     },
-    { "led",         "led <1-3> <on|off|blink|fade> [ms]", "LED mode (1 green, 2 amber, 3 red)", cmd_led     },
-    { "msgs",        "msgs",                              "message bus counters",              cmd_msgs     },
-    { "log_level",   "log_level [error|warn|info|debug]", "show or set the log level",         cmd_loglevel },
-    { "reset",       "reset",                             "software reset",                    cmd_reset    },
-    { "state",       "state",                             "show current state",                state        },
-    { "tasks",       "tasks",                             "task state, priority, stack free",  cmd_tasks   },
-    { "uptime",      "uptime",                            "time since boot",                   cmd_uptime   },
-    { "version",     "version",                           "git hash, build type, build time",  cmd_version  },
+    { "clear_fault", "clear_fault",                        "clear a latched fault",              cmd_clear_fault },
+    { "heap",        "heap",                               "FreeRTOS heap use",                  cmd_heap        },
+    { "jitter",      "jitter [clear]",                     "control tick timing (DWT)",          cmd_jitter      },
+    { "led",         "led <1-3> <on|off|blink|fade> [ms]", "LED mode (1 green, 2 amber, 3 red)", cmd_led         },
+    { "log_level",   "log_level [error|warn|info|debug]",  "show or set the log level",          cmd_loglevel    },
+    { "msgs",        "msgs",                               "message bus counters",               cmd_msgs        },
+    { "reset",       "reset",                              "software reset",                     cmd_reset       },
+    { "state",       "state",                              "supervisor state and time in it",    cmd_state       },
+    { "tasks",       "tasks",                              "task state, priority, stack free",   cmd_tasks       },
+    { "uptime",      "uptime",                             "time since boot",                    cmd_uptime      },
+    { "version",     "version",                            "git hash, build type, build time",   cmd_version     },
 };
 
 const size_t cli_cmds_count = sizeof(cli_cmds) / sizeof(cli_cmds[0]);

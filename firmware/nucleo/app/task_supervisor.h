@@ -1,7 +1,7 @@
 /*
  * task_supervisor.h
  *
- * Supervisor task entry point.
+ * Supervisor task: system state machine and the getters the CLI uses.
  *
  * Author: Haleigh (haleighv)
  * Copyright (c) 2026 haleighv
@@ -27,11 +27,14 @@ typedef enum {
 
 void task_supervisor(void *arg);
 
-/* Public Functions */
+/* Getters: safe from any task (single-word reads) */
 supervisor_state_t supervisor_get_state(void);
 uint32_t supervisor_get_state_ms(void);
-bool supervisor_clear_fault(void);
 const char *supervisor_state_name(supervisor_state_t s);
+
+/* FAULT -> IDLE. Returns false if not in FAULT.
+ * TODO: changes state from the caller's task; move to a message. */
+bool supervisor_clear_fault(void);
 
 #ifdef __cplusplus
 }

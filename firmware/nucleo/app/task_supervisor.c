@@ -1,14 +1,32 @@
-#include "task_supervisor.h"
-
+/*
+ * task_supervisor.c
+ *
+ * Supervisor task. Owns the system state (BOOT/IDLE/ARMED/FAULT), starts
+ * the control tick once every task is up, and reacts to error events on
+ * the message bus. Runs every 10 ms.
+ *
+ * Notes:
+ * - FAULT latches. It's only cleared on purpose (CLI clear_fault).
+ * - TODO: clear_fault should arrive as a message, so only this task ever
+ *   changes the state.
+ *
+ * Author: Haleigh (haleighv)
+ * Copyright (c) 2026 haleighv
+ * SPDX-License-Identifier: MIT
+ */
 #define LOG_TAG "supervisor"
+#include "task_supervisor.h"
 #include "log.h"
 #include "msg.h"
+#include "control.h"
 #include "task_utilities.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
 
-TickType_t xLastStateChangeTime;   /* tick count when the state last changed */
+#define CONTROL_WARMUP_MS   1000    /* jitter stats restart after this */
+
+static TickType_t xLastStateChangeTime;   /* tick count when the state last changed */
 
 static supervisor_state_t state = SUPERVISOR_BOOT;
 static msg_queue_id_t supervisor_msg_queue_id;
@@ -103,16 +121,32 @@ void task_supervisor(void *arg)
     initialize();
     task_sync();
 
+    /* Start the control tick only after every task is up */
+    control_start();
+
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 10;
 
-    // Initialise the xLastWakeTime variable with the current time.
-    // After task_sync(), so the 10 ms schedule starts when the loop does.
+    /* Start the 10 ms schedule from here, after task_sync(), so it lines
+     * up with when the loop actually starts */
     xLastWakeTime = xTaskGetTickCount();
     xLastStateChangeTime = xLastWakeTime;
 
+    /* Boot (every task finishing init, log burst) delays a tick or two the
+     * same way every time. Restart the jitter stats once that's over so
+     * they show steady state. */
+    const TickType_t control_started = xLastWakeTime;
+    bool warmup_done = false;
+
     for (;;) {
         handle_messages();
+
+        if (!warmup_done &&
+            (xTaskGetTickCount() - control_started) >= pdMS_TO_TICKS(CONTROL_WARMUP_MS)) {
+            control_reset_period();
+            warmup_done = true;
+            LOG_I("warm-up done, jitter stats restarted");
+        }
 
     switch (state) {
         case SUPERVISOR_BOOT:

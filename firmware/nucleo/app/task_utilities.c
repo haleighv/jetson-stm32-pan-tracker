@@ -45,9 +45,11 @@ void task_sync(void)
 
     const char *name = pcTaskGetName(NULL);
 
-    /* Tell the init task this one is done initializing */
-    (void)xSemaphoreGive(ready_sem);
+    /* Log before giving: the init task runs at a higher priority and wakes
+     * as soon as the last task gives, so logging after would print out of
+     * order */
     LOG_D("%s waiting at sync point", name);
+    (void)xSemaphoreGive(ready_sem);
 
     /* Wait for the gate, then pass it on to the next waiting task */
     (void)xSemaphoreTake(gate_sem, portMAX_DELAY);
