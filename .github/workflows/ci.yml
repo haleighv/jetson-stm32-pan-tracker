@@ -1,0 +1,48 @@
+# CI: host unit tests + Nucleo firmware build on every push and PR.
+name: CI
+
+on:
+  push:
+    branches: [mainline]
+  pull_request:
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Build and run host tests
+        run: ./firmware/scripts/test.sh
+
+  firmware:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history + tags, so git describe gives v0.1.0-N-gHASH
+
+      - name: Install ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Install Arm GNU Toolchain
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: '15.3.Rel2'    # match the Mac
+
+      - name: Build firmware
+        run: ./firmware/scripts/build_nucleo.sh Debug
+
+      - name: Size
+        run: arm-none-eabi-size firmware/nucleo/build/Debug/nucleo.elf
+
+      - name: Upload elf + map
+        uses: actions/upload-artifact@v4
+        with:
+          name: nucleo-debug-${{ github.sha }}
+          path: |
+            firmware/nucleo/build/Debug/nucleo.elf
+            firmware/nucleo/build/Debug/nucleo.map
