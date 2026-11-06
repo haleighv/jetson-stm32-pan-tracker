@@ -17,6 +17,11 @@
 #           ACK slot of each frame, i.e. the Nucleo acknowledging. Single pulse widths at
 #           a transceiver RX pin are skewed by its asymmetric edge delays (2.96 us for a
 #           3-bit run), so read bit rate from same-direction edges over a long span.
+# Round trip: tools/jetson/can_echo.py on the Jetson, `can test 10000` on the Nucleo:
+#           tx 10000, rx 10000, 0 gaps, 0 bad data, TEC/REC 0. Saleae capture of all 20,000
+#           frames in 2026-11-06-can-echo-10k.csv.gz, timing in its .report.txt
+#           (tools/can_rtt.py): Nucleo turnaround p50 1.9 us / max 3.0 us, Jetson p50 105 us /
+#           p99 215 us / max 1794 us, round trip p50 350 us.
 # Raw output follows.
 
 ## Jetson
@@ -49,3 +54,16 @@ rx 1001, seq_gaps 0, bad_data 0
 tec 0, rec 0
 > can test 1
 test started, 1 frames
+
+## Round trip over the bus
+> uptime
+4.404 s
+> can test 10000
+test started, 10000 frames
+> can
+test idle
+tx 10000, tx_full 0
+rx 10000, seq_gaps 0, bad_data 0
+tec 0, rec 0
+> uptime
+17.684 s

@@ -18,11 +18,20 @@ CAN bus between the Jetson and the Nucleo:
 - Nucleo REC read 4 right after the Jetson rebooted (J17 glitches while the pins get reconfigured). It counts back down by 1 per good frame and was 0 after the burst.
 - Saleae on the real bus: Jetson frames decode with ACK true. On the Nucleo's TX pin the only activity is one dominant bit in each frame's ACK slot, the Nucleo acknowledging. Screenshot `docs/results/2026-11-06-can-bus-decode-ack.png`.
 - `can send <id> <hex>` CLI command (hex string like `cansend`, 0-8 bytes): Nucleo -> Jetson frames on demand.
-- Raw output in `docs/results/2026-11-06-can-link.txt`.
+- Round trip over the real bus: `tools/jetson/can_echo.py` echoes id 0x7F0 back, Nucleo runs `can test 10000`: tx 10000, rx 10000, 0 gaps, 0 bad data, TEC/REC 0.
+- Timing from a Saleae capture of the whole run (20,000 frames), `tools/can_rtt.py`. Turnaround = gap after a frame minus the 11 bits the bus must stay idle:
+
+| Turnaround | p50 | p99 | p99.9 | max |
+|---|---|---|---|---|
+| Nucleo (RX ISR -> next frame) | 1.9 µs | 2.0 µs | 2.9 µs | 3.0 µs |
+| Jetson (driver -> kernel -> Python -> send) | 105 µs | 215 µs | 346 µs | 1794 µs |
+
+- Round trip p50 350 µs, mean 355 µs (2,817/s). In external loopback (no Jetson) it was ~127 µs.
+- The Nucleo's turnaround is flat to within ~1 µs. The Jetson's is ~55x slower at p50 and has a 17x spread from p50 to max: Linux scheduling, the network stack, and Python. That spread is why the 1 kHz loop and the heartbeat timeout live on the MCU; the Jetson sends setpoints and doesn't close the loop.
+- Raw output in `docs/results/2026-11-06-can-link.txt`. Capture `2026-11-06-can-echo-10k.csv.gz` (gzipped, 13.6 MB raw) and its report.
 - Also: SSH key login to the Jetson (`ssh jetson`).
 
 Saved for next time:
-- `tools/can_echo.py` on the Jetson, then `can test 10000` over the real bus
 - Fault injection: pull CAN-H, watch error passive / bus off on both sides. Nucleo needs software to recover from bus off (`restart-ms` covers the Jetson)
 - `hardware/can-wiring.md`
 - Photos: README hero shot, J17 breakout and bus wiring in `hardware/photos/`, Saleae decode in `docs/results/` (JPEG ~1600 px, GPS stripped)
