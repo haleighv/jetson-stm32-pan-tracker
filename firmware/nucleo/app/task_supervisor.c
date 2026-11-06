@@ -19,6 +19,7 @@
 #include "log.h"
 #include "msg.h"
 #include "control.h"
+#include "can.h"
 #include "task_utilities.h"
 
 #include "FreeRTOS.h"
@@ -121,8 +122,9 @@ void task_supervisor(void *arg)
     initialize();
     task_sync();
 
-    /* Start the control tick only after every task is up */
+    /* Start the control tick and CAN only after every task is up */
     control_start();
+    can_start();
 
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 10;
