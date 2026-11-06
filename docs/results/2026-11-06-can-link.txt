@@ -11,6 +11,12 @@
 # Earlier (external loopback, Saleae on PD1): frames decode as id 0x7F0 + seq/NOT-seq payload,
 #           5-bit run = 4.99 us, 6-bit run = 5.99 us (1 Mbps), ~127 us frame to frame,
 #           ~7,900 frames/s ping-pong, ISR turnaround to next TX ~1-4 us.
+# Real bus (Saleae, 2026-11-06-can-bus-decode-ack.png): Jetson `cangen -g 10 -I 123 -L 8`.
+#           D0 = bus as received (transceiver RX): frames decode, id 0x123, 8 bytes, ACK true,
+#           10 ms apart. D1 = Nucleo FDCAN1_TX (PD1): idle except one dominant bit in the
+#           ACK slot of each frame, i.e. the Nucleo acknowledging. Single pulse widths at
+#           a transceiver RX pin are skewed by its asymmetric edge delays (2.96 us for a
+#           3-bit run), so read bit rate from same-direction edges over a long span.
 # Raw output follows.
 
 ## Jetson
