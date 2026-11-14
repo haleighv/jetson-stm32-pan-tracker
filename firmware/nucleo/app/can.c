@@ -210,6 +210,7 @@ void can_get_stats(can_stats_t *out)
     if (HAL_FDCAN_GetProtocolStatus(&hfdcan1, &ps) == HAL_OK) {
         out->error_passive = (ps.ErrorPassive != 0U);
         out->bus_off       = (ps.BusOff != 0U);
+        out->warning = (ps.Warning != 0U);
     }
 }
 

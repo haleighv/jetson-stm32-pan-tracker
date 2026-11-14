@@ -293,9 +293,11 @@ static cli_status_t cmd_can(cli_t *cli, int argc, char **argv)
     cli_printf(cli, "rx %lu, seq_gaps %lu, bad_data %lu\r\n",
                (unsigned long)st.rx_frames, (unsigned long)st.rx_seq_gaps,
                (unsigned long)st.rx_bad_data);
-    cli_printf(cli, "tec %u, rec %u%s%s\r\n", st.tec, st.rec,
-               st.error_passive ? ", ERROR PASSIVE" : "",
-               st.bus_off ? ", BUS OFF" : "");
+    const char *state = st.bus_off       ? "BUS OFF (stopped, needs restart)"
+                    : st.error_passive ? "degraded (error passive)"
+                    : st.warning       ? "ok, error count >= 96 (warning)"
+                    :                    "ok (error active)";
+    cli_printf(cli, "tec %u, rec %u, %s\r\n", st.tec, st.rec, state);
     return CLI_OK;
 }
 

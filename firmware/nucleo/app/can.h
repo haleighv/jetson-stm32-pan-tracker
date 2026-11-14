@@ -36,8 +36,9 @@ typedef struct {
     uint32_t rx_bad_data;   /* payload didn't match the test pattern */
     uint8_t  tec;           /* transmit error counter */
     uint8_t  rec;           /* receive error counter */
-    bool     error_passive;
-    bool     bus_off;
+    bool     error_passive; /* TEC or REC > 127: error flags can't disturb the bus */
+    bool     bus_off;       /* TEC > 255: off the bus until FDCAN is restarted */
+    bool     warning;       /* TEC or REC >= 96 */
 } can_stats_t;
 
 /* Filters, RX callback, RX notification, then start. Register before
