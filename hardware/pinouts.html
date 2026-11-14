@@ -1,0 +1,721 @@
+<!doctype html>
+<!--
+  pinouts.html
+
+  Bench pinouts: NUCLEO-H723ZG Zio headers (CN7-CN10, top view and underside)
+  and the Jetson Orin Nano 40-pin header (J12) at the end of the case ribbon.
+  Open it locally in a browser; GitHub shows HTML as source.
+
+  Pin data: ST UM2407 Rev 6 (Figure 16, Tables 18-21) and NVIDIA SP-11324-001
+  v1.3 (Table 3-3). Project pin use lives in PROJ in the script below; keep it
+  in sync with docs/firmware-architecture.md when pins change in CubeMX.
+
+  Author: Haleigh (haleighv)
+  Copyright (c) 2026 haleighv
+  SPDX-License-Identifier: MIT
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bench Pinouts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: bench reference. Header + tabs, controls row, then the board drawn the way it sits
+   on the bench (connectors in their physical places), a detail card, and a searchable list. */
+:root {
+  --bg: #f3f5f2;
+  --panel: #ffffff;
+  --ink: #16201b;
+  --muted: #5b6a62;
+  --line: #d5ddd8;
+  --board: #e7ece8;
+  --accent: #0f766e;
+  --pad: #b8862b;
+  --c-pwr: #d9381e;
+  --c-gnd: #3b4a55;
+  --c-adc: #7c3aed;
+  --c-tim: #c27803;
+  --c-com: #1f5fd6;
+  --c-io: #7a8a82;
+  --c-nc: #b8c2bc;
+  --warn: #b42318;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --panel: #151e1a; --ink: #e4ece7; --muted: #92a39a; --line: #26342e;
+    --board: #1b2621; --accent: #34d3bd; --pad: #d8b25c;
+    --c-pwr: #ff7a5c; --c-gnd: #9fb0bd; --c-adc: #b39bff; --c-tim: #f5b83d; --c-com: #6da2ff;
+    --c-io: #8c9b93; --c-nc: #4a5751; --warn: #ff8a7a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --panel: #151e1a; --ink: #e4ece7; --muted: #92a39a; --line: #26342e;
+  --board: #1b2621; --accent: #34d3bd; --pad: #d8b25c;
+  --c-pwr: #ff7a5c; --c-gnd: #9fb0bd; --c-adc: #b39bff; --c-tim: #f5b83d; --c-com: #6da2ff;
+  --c-io: #8c9b93; --c-nc: #4a5751; --warn: #ff8a7a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.45;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 15px; font-weight: 600; margin: 0; }
+p { margin: 0; }
+.mono { font-family: var(--font-mono); }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+header .sub { color: var(--muted); font-size: 13px; }
+.tabs { display: flex; gap: 4px; background: var(--board); padding: 4px; border-radius: 10px; }
+.tabs button {
+  font: inherit; font-weight: 600; border: 0; background: transparent; color: var(--muted);
+  padding: 8px 14px; border-radius: 7px; cursor: pointer;
+}
+.tabs button[aria-selected="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.search { flex: 1 1 260px; min-width: 0; position: relative; }
+.search input {
+  width: 100%; font: inherit; font-family: var(--font-mono); font-size: 13px; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink);
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font: inherit; font-size: 12px; font-weight: 500; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  padding: 5px 10px; border-radius: 999px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+}
+.chip .dot { width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: color-mix(in srgb, var(--c, var(--accent)) 14%, var(--panel)); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 12px; font-weight: 600; border: 0; padding: 7px 11px; background: var(--panel); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+@media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- board ---------- */
+.scroll { overflow-x: auto; border-radius: 14px; }
+.board {
+  background: var(--board); border: 1px solid var(--line); border-radius: 14px; padding: 14px 14px 18px;
+  display: grid; grid-template-columns: auto minmax(70px, 1fr) auto; gap: 14px; width: max-content; min-width: 100%;
+  position: relative;
+}
+.edge { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.port { border: 1.5px solid var(--muted); border-radius: 5px; padding: 3px 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0; text-transform: none; background: var(--panel); color: var(--ink); }
+.side { display: grid; gap: 16px; align-content: start; }
+.side.right { align-content: start; }
+.mid { display: grid; place-items: center; }
+.chip-ic {
+  width: 74px; height: 74px; border-radius: 6px; background: #1d2522; color: #d7e1dc; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 9.5px; text-align: center; line-height: 1.3; box-shadow: 0 0 0 4px color-mix(in srgb, var(--pad) 40%, transparent);
+}
+.conn { display: grid; gap: 4px; }
+.conn-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; }
+.conn-h b { font-family: var(--font-mono); font-size: 13px; }
+.conn-h span { color: var(--muted); font-size: 11px; }
+.rows { display: grid; grid-template-columns: repeat(2, 168px); gap: 3px; }
+.pin {
+  --c: var(--c-io);
+  position: relative; display: grid; grid-template-columns: 22px 1fr; column-gap: 6px; align-items: center;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); border-radius: 6px;
+  background: color-mix(in srgb, var(--c) 13%, var(--panel)); color: var(--ink);
+  padding: 4px 6px 4px 4px; min-height: 40px; cursor: pointer; text-align: left; font: inherit;
+  transition: opacity .12s, transform .12s;
+}
+.pin:hover { transform: translateY(-1px); }
+.pin .n { grid-row: span 2; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; background: var(--panel); border: 1.5px solid var(--pad); color: var(--ink); }
+.pin.first .n { border-radius: 4px; }
+.pin .main { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin .main small { font-weight: 500; color: var(--muted); font-size: 11px; margin-left: 4px; }
+.pin .fn { font-size: 10.5px; color: var(--muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin .tag {
+  position: absolute; top: -7px; right: 5px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 1px 6px; border-radius: 999px; background: var(--accent); color: var(--panel); white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis;
+}
+.pin .tag.plan { background: var(--panel); color: var(--accent); border: 1px dashed var(--accent); }
+.pin .tag.warn { background: var(--warn); color: var(--panel); }
+.pin.proj { box-shadow: 0 0 0 2px var(--accent); }
+.pin.proj.plan { box-shadow: 0 0 0 1.5px var(--accent); }
+.pin.avoid { box-shadow: 0 0 0 1.5px var(--warn); }
+.pin.dim { opacity: 0.22; }
+.pin.sel { outline: 2.5px solid var(--ink); outline-offset: 1px; }
+.cat-pwr { --c: var(--c-pwr); } .cat-gnd { --c: var(--c-gnd); } .cat-adc { --c: var(--c-adc); }
+.cat-tim { --c: var(--c-tim); } .cat-com { --c: var(--c-com); } .cat-io { --c: var(--c-io); } .cat-nc { --c: var(--c-nc); }
+
+.viewnote { font-size: 12px; color: var(--muted); }
+.viewnote b { color: var(--ink); }
+
+/* ---------- side panel ---------- */
+aside { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 980px) { aside { position: static; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+.detail .big { font-family: var(--font-mono); font-size: 26px; font-weight: 600; line-height: 1; }
+.detail .where { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.kv { display: grid; grid-template-columns: 92px 1fr; gap: 4px 10px; font-size: 12.5px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--font-mono); min-width: 0; overflow-wrap: anywhere; }
+.note { font-size: 12.5px; border-left: 3px solid var(--accent); padding: 6px 10px; background: color-mix(in srgb, var(--accent) 8%, var(--panel)); border-radius: 0 6px 6px 0; }
+.note.warn { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--panel)); }
+.legend { display: grid; gap: 6px; font-size: 12px; }
+.legend div { display: flex; gap: 8px; align-items: center; }
+.legend i { width: 14px; height: 14px; border-radius: 4px; background: color-mix(in srgb, var(--c) 18%, var(--panel)); border: 1px solid var(--c); flex: none; }
+.legend .ring { background: var(--panel); border: 0; box-shadow: 0 0 0 2px var(--accent); }
+.legend .ring.plan { box-shadow: 0 0 0 1.5px var(--accent); outline: 1px dashed var(--accent); outline-offset: 2px; }
+.legend .ring.av { box-shadow: 0 0 0 1.5px var(--warn); }
+ul.tight { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; }
+
+/* ---------- table ---------- */
+.tablewrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; background: color-mix(in srgb, var(--board) 60%, var(--panel)); position: sticky; top: 0; }
+td.mono { font-family: var(--font-mono); }
+td .sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--c); margin-right: 6px; vertical-align: 0; }
+tr { cursor: pointer; }
+tr:hover td { background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
+tr.hide { display: none; }
+td.proj { color: var(--accent); font-weight: 600; }
+td.proj.warn { color: var(--warn); }
+.count { color: var(--muted); font-size: 12px; }
+
+/* ---------- jetson socket ---------- */
+.sock-wrap { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 720px) { .sock-wrap { grid-template-columns: minmax(0, 1fr); } }
+.socket { background: var(--board); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px 16px; display: grid; gap: 8px; width: max-content; }
+.stripe { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
+.stripe .bar { height: 8px; width: 70px; border-radius: 4px; background: var(--c-pwr); }
+.colhead { display: grid; grid-template-columns: repeat(2, 178px); gap: 3px; font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.socket .rows { grid-template-columns: repeat(2, 178px); }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; }
+.panel[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .pin { transition: none; } .pin:hover { transform: none; } }
+</style>
+
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Bench Pinouts</h1>
+      <p class="sub">NUCLEO-H723ZG Zio headers and the Jetson Orin Nano 40-pin header at the end of the case ribbon. Click any pin.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Board">
+      <button role="tab" id="tab-nucleo" aria-selected="true" aria-controls="panel-nucleo">Nucleo-H723ZG</button>
+      <button role="tab" id="tab-jetson" aria-selected="false" aria-controls="panel-jetson">Jetson 40-pin ribbon</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="search"><input id="q" type="search" placeholder="Search: PD0, CAN, D6, TIM1, CN9-25, GND…" aria-label="Search pins" autocomplete="off"></div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <!-- ===================== NUCLEO ===================== -->
+  <section class="panel" id="panel-nucleo" role="tabpanel" aria-labelledby="tab-nucleo">
+    <div class="layout">
+      <div style="display:grid; gap:12px; min-width:0">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between">
+          <p class="viewnote" id="viewnote"></p>
+          <div class="seg" role="group" aria-label="Board side">
+            <button id="v-top" aria-pressed="true">Top view</button>
+            <button id="v-bot" aria-pressed="false">Underside</button>
+          </div>
+        </div>
+        <div class="scroll"><div class="board" id="board"></div></div>
+      </div>
+      <aside>
+        <div class="card detail" id="detail"></div>
+        <div class="card">
+          <h2>Key</h2>
+          <div class="legend">
+            <div><i class="ring"></i> In use on this project</div>
+            <div><i class="ring plan"></i> Planned (motor driver, encoder)</div>
+            <div><i class="ring av"></i> Avoid: already taken or doubled</div>
+            <div><i style="--c:var(--c-pwr)"></i> Power</div>
+            <div><i style="--c:var(--c-gnd)"></i> Ground</div>
+            <div><i style="--c:var(--c-adc)"></i> Analog in (ADC)</div>
+            <div><i style="--c:var(--c-tim)"></i> Timer / PWM</div>
+            <div><i style="--c:var(--c-com)"></i> Comms (UART, I2C, SPI, CAN, SAI, QSPI, SDMMC)</div>
+            <div><i style="--c:var(--c-io)"></i> Plain GPIO</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Not on the headers</h2>
+          <ul class="tight">
+            <li><span class="mono">PB0</span> LD1 green (also D33, CN10-31) · <span class="mono">PE1</span> LD2 amber · <span class="mono">PB14</span> LD3 red</li>
+            <li><span class="mono">PD8 / PD9</span> USART3 to the ST-LINK console</li>
+            <li><span class="mono">PC13</span> user button B1</li>
+            <li>Ethernet RMII: <span class="mono">PA1 PA2 PA7 PC1 PC4 PC5 PG11 PG13 PB13</span></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+    <div style="display:grid; gap:8px; margin-top:18px">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap"><h2>All header pins</h2><span class="count" id="count-n"></span></div>
+      <div class="tablewrap"><table id="tbl-n"><thead><tr><th>Where</th><th>Arduino</th><th>MCU pin</th><th>Function</th><th>On this project</th></tr></thead><tbody></tbody></table></div>
+      <p class="viewnote">Source: ST UM2407 Rev 6, Figure 16 and Tables 18–21 (MB1364). Pin 1 of every connector is at the ST-LINK USB end.</p>
+    </div>
+  </section>
+
+  <!-- ===================== JETSON ===================== -->
+  <section class="panel" id="panel-jetson" role="tabpanel" aria-labelledby="tab-jetson" hidden>
+    <div class="layout">
+      <div class="sock-wrap" style="min-width:0">
+        <div class="scroll"><div class="socket" id="socket"></div></div>
+        <div style="display:grid; gap:12px; min-width:0">
+          <div class="card">
+            <h2>Find pin 1 without opening the case</h2>
+            <ol class="steps">
+              <li>The ribbon's <b>red stripe</b> marks the end of the socket with <b>pins 1 and 2</b>. Each wire goes to the same pin number at both ends, so numbering survives the "opposite" ribbon.</li>
+              <li>Power the Jetson. Meter black lead on a known ground (a USB port shell, or J17 GND).</li>
+              <li>Probe the two holes at the stripe end: <b>3.3 V = pin 1</b>, <b>5 V = pin 2</b>. The next hole along the 5 V row is pin 4, also 5 V.</li>
+              <li>That tells you which row is odd. If your socket faces the other way from this drawing, press <b>Flip rows</b>.</li>
+            </ol>
+          </div>
+          <div class="seg" role="group" aria-label="Row order" style="justify-self:start">
+            <button id="flip" aria-pressed="false">Flip rows</button>
+          </div>
+        </div>
+      </div>
+      <aside>
+        <div class="card detail" id="detail-j"></div>
+        <div class="card">
+          <h2>Electrical notes</h2>
+          <ul class="tight">
+            <li>Everything on the header is <b>3.3 V logic</b>. Never feed it 5 V.</li>
+            <li>Pins 3, 5, 27, 28 (I2C) go straight to the SoC, open-drain with pull-ups on the carrier (2.2 kΩ / 1.5 kΩ), ±2 mA.</li>
+            <li>All other signal pins pass through <b>TXB0108</b> level shifters: very weak drivers. Fine into a logic analyzer or another chip's input; won't light an LED or drive a long wire well.</li>
+            <li>3.3 V and 5 V pins are rated 1 A each.</li>
+            <li>Pin functions other than GPIO, UART1 and I2C need the pinmux set in <span class="mono">jetson-io</span>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Key</h2>
+          <div class="legend">
+            <div><i style="--c:var(--c-pwr)"></i> Power</div>
+            <div><i style="--c:var(--c-gnd)"></i> Ground</div>
+            <div><i style="--c:var(--c-com)"></i> UART, I2C, SPI, I2S</div>
+            <div><i style="--c:var(--c-tim)"></i> GPIO with PWM option</div>
+            <div><i style="--c:var(--c-io)"></i> GPIO</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <div style="display:grid; gap:8px; margin-top:18px">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap"><h2>All 40 pins</h2><span class="count" id="count-j"></span></div>
+      <div class="tablewrap"><table id="tbl-j"><thead><tr><th>Pin</th><th>Name</th><th>Default</th><th>Alternate</th><th>SoC pin</th><th>Notes</th></tr></thead><tbody></tbody></table></div>
+      <p class="viewnote">Source: NVIDIA SP-11324-001 v1.3 (Jetson Orin Nano Developer Kit Carrier Board Specification), Table 3-3, header J12. Ribbon: Waveshare case kit, "2×20PIN (opposite) ~55 mm".</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  // ---------------------------------------------------------------- data
+  // [pin, arduino, mcu, signal, mcuFunction, cat]   cat: pwr gnd adc tim com io nc
+  const CN = {
+    CN7: { pins: 20, side: "right", order: 0, rows: [
+      [1,"D16","PC6","I2S_A_MCK","I2S2","com"],[2,"D15","PB8","I2C_A_SCL","I2C1_SCL","com"],
+      [3,"D17","PB15","I2S_A_SD","I2S2","com"],[4,"D14","PB9","I2C_A_SDA","I2C1_SDA","com"],
+      [5,"D18","PB13","I2S_A_CK","I2S2","com"],[6,"VREFP","—","VREFP","VDDA/VREF+","pwr"],
+      [7,"D19","PB12","I2S_A_WS","I2S2","com"],[8,"GND","—","GND","Ground","gnd"],
+      [9,"D20","PA15","I2S_B_WS","I2S3","com"],[10,"D13","PA5","SPI_A_SCK","SPI1_SCK","com"],
+      [11,"D21","PC7","I2S_B_MCK","I2S3","com"],[12,"D12","PA6","SPI_A_MISO","SPI1_MISO","com"],
+      [13,"D22","PB5","I2S_B_SD / SPI_B_MOSI","I2S3 / SPI3","com"],[14,"D11","PB5","SPI_A_MOSI / TIM_E_PWM1","SPI1_MOSI / TIM3_CH2","tim"],
+      [15,"D23","PB3","I2S_B_CK / SPI_B_SCK","I2S3 / SPI3","com"],[16,"D10","PD14","SPI_A_CS / TIM_B_PWM3","SPI1_CS / TIM4_CH3","tim"],
+      [17,"D24","PA4","SPI_B_NSS","SPI3","com"],[18,"D9","PD15","TIM_B_PWM2","TIM4_CH4","tim"],
+      [19,"D25","PB4","SPI_B_MISO","SPI3","com"],[20,"D8","PF3","I/O","GPIO","io"],
+    ]},
+    CN8: { pins: 16, side: "left", order: 0, rows: [
+      [1,"NC","—","Not connected","—","nc"],[2,"D43","PC8","SDMMC_D0","SDMMC","com"],
+      [3,"IOREF","—","IOREF","3.3 V reference","pwr"],[4,"D44","PC9","SDMMC_D1 / I2S_A_CKIN","SDMMC / I2S_CKIN","com"],
+      [5,"NRST","NRST","Reset (active low)","RESET","pwr"],[6,"D45","PC10","SDMMC_D2","SDMMC","com"],
+      [7,"3V3","—","3.3 V","3.3 V in/out","pwr"],[8,"D46","PC11","SDMMC_D3","SDMMC","com"],
+      [9,"5V","—","5 V","5 V output","pwr"],[10,"D47","PC12","SDMMC_CK","SDMMC","com"],
+      [11,"GND","—","GND","Ground","gnd"],[12,"D48","PD2","SDMMC_CMD","SDMMC","com"],
+      [13,"GND","—","GND","Ground","gnd"],[14,"D49","PG2","I/O","GPIO","io"],
+      [15,"VIN","—","VIN","Power input (7–12 V)","pwr"],[16,"D50","PG3","I/O","GPIO","io"],
+    ]},
+    CN9: { pins: 30, side: "left", order: 1, rows: [
+      [1,"A0","PA3","ADC","ADC12_INP15","adc"],[2,"D51","PD7","USART_B_SCLK","USART2","com"],
+      [3,"A1","PC0","ADC","ADC123_INP10","adc"],[4,"D52","PD6","USART_B_RX","USART2","com"],
+      [5,"A2","PC3","ADC","ADC12_INP13","adc"],[6,"D53","PD5","USART_B_TX","USART2","com"],
+      [7,"A3","PB1","ADC","ADC12_INP5","adc"],[8,"D54","PD4","USART_B_RTS","USART2","com"],
+      [9,"A4","PC2","ADC (or PB9 = I2C1_SDA)","ADC123_INP12","adc"],[10,"D55","PD3","USART_B_CTS","USART2","com"],
+      [11,"A5","PF10","ADC (or PB8 = I2C1_SCL)","ADC3_INP6","adc"],[12,"GND","—","GND","Ground","gnd"],
+      [13,"D72","PB2","COMP1_INP","COMP1_INP","io"],[14,"D56","PE2","SAI_A_MCLK","SAI1_A","com"],
+      [15,"D71","PE9","COMP2_INP","COMP2_INP","io"],[16,"D57","PE4","SAI_A_FS","SAI1_A","com"],
+      [17,"D70","PF2","I2C_B_SMBA","I2C2","com"],[18,"D58","PE5","SAI_A_SCK","SAI1_A","com"],
+      [19,"D69","PF1","I2C_B_SCL","I2C2","com"],[20,"D59","PE6","SAI_A_SD","SAI1_A","com"],
+      [21,"D68","PF0","I2C_B_SDA","I2C2","com"],[22,"D60","PE3","SAI_B_SD","SAI1_B","com"],
+      [23,"GND","—","GND","Ground","gnd"],[24,"D61","PF8","SAI_B_SCK","SAI1_B","com"],
+      [25,"D67","PD0","CAN_RX","FDCAN1_RX","com"],[26,"D62","PF7","SAI_B_MCLK","SAI1_B","com"],
+      [27,"D66","PD1","CAN_TX","FDCAN1_TX","com"],[28,"D63","PF9","SAI_B_FS","SAI1_B","com"],
+      [29,"D65","PG0","I/O","GPIO","io"],[30,"D64","PG1","I/O","GPIO","io"],
+    ]},
+    CN10: { pins: 34, side: "right", order: 1, rows: [
+      [1,"AVDD","—","VDDA","Analog VDD","pwr"],[2,"D7","PG12","I/O","GPIO","io"],
+      [3,"AGND","—","AGND","Analog ground","gnd"],[4,"D6","PE9","TIMER_A_PWM1","TIM1_CH1","tim"],
+      [5,"GND","—","GND","Ground","gnd"],[6,"D5","PE11","TIMER_A_PWM2","TIM1_CH2","tim"],
+      [7,"A6","PF4","ADC_A_IN","ADC3_INP9","adc"],[8,"D4","PE14","I/O","GPIO","io"],
+      [9,"A7","PF5","ADC_B_IN","ADC3_INP4","adc"],[10,"D3","PE13","TIMER_A_PWM3","TIM1_CH3","tim"],
+      [11,"A8","PF6","ADC_C_IN","ADC3_INP8","adc"],[12,"D2","PG14","I/O","GPIO","io"],
+      [13,"D26","PG6","QSPI_CS","QSPI1_NCS","com"],[14,"D1","PB6","USART_A_TX","LPUART1_TX","com"],
+      [15,"D27","PB2","QSPI_CLK","QSPI1_CLK","com"],[16,"D0","PB7","USART_A_RX","LPUART1_RX","com"],
+      [17,"GND","—","GND","Ground","gnd"],[18,"D42","PE8","TIMER_A_PWM1N","TIM1_CH1N","tim"],
+      [19,"D28","PD13","QSPI_BK1_IO3","QSPI1_IO3 · TIM4_CH2","com"],[20,"D41","PE7","TIMER_A_ETR","TIM1_ETR","tim"],
+      [21,"D29","PD12","QSPI_BK1_IO1","QSPI1_IO1 · TIM4_CH1","com"],[22,"GND","—","GND","Ground","gnd"],
+      [23,"D30","PD11","QSPI_BK1_IO0","QSPI1_IO0","com"],[24,"D40","PE10","TIMER_A_PWM2N","TIM1_CH2N","tim"],
+      [25,"D31","PE2","QSPI_BK1_IO2","QSPI1_IO2","com"],[26,"D39","PE12","TIMER_A_PWM3N","TIM1_CH3N","tim"],
+      [27,"GND","—","GND","Ground","gnd"],[28,"D38","PE6","TIMER_A_BKIN2","TIM1_BKIN2","tim"],
+      [29,"D32","PA0","TIM_C_PWM1","TIM2_CH1","tim"],[30,"D37","PE15","TIMER_A_BKIN1","TIM1_BKIN1","tim"],
+      [31,"D33","PB0","TIM_D_PWM1","TIM3_CH3","tim"],[32,"D36","PB10","TIMER_C_PWM2","TIM2_CH3","tim"],
+      [33,"D34","PE0","TIM_B_ETR","TIM4_ETR","tim"],[34,"D35","PB11","TIMER_C_PWM3","TIM2_CH4","tim"],
+    ]},
+  };
+
+  // Project use: key "CNx-n" -> [label, state, detail]   state: use | plan | avoid
+  const PROJ = {
+    "CN9-25": ["CAN RX", "use", "FDCAN1_RX → SN65HVD230 RX (R). Wired, Normal mode, 1 Mbps."],
+    "CN9-27": ["CAN TX", "use", "FDCAN1_TX → SN65HVD230 TX (D). Wired."],
+    "CN9-23": ["CAN GND", "use", "Ground for the Nucleo-side CAN transceiver."],
+    "CN8-7":  ["3V3 out", "use", "Feeds the CAN transceiver VCC. Planned: Pololu VDD and the encoder too. Neighbors are NRST (5) and 5V (9)."],
+    "CN10-12":["Scope pin", "use", "Toggles every 1 kHz control tick (Saleae D2 jitter captures)."],
+    "CN10-31":["LD1 green", "avoid", "PB0 also drives the on-board green LED (LED task owns it)."],
+    "CN10-4": ["Motor PWM", "plan", "TIM1_CH1, 20 kHz → Pololu VNH5019 PWM."],
+    "CN10-6": ["Motor INA", "plan", "GPIO out, start low → Pololu INA."],
+    "CN10-8": ["Motor INB", "plan", "GPIO out, start low → Pololu INB."],
+    "CN10-10":["EN/DIAG", "plan", "Open-drain → Pololu ENA/DIAGA + ENB/DIAGB tied. Low = fault (read) or force off (drive)."],
+    "CN10-7": ["Motor CS", "plan", "ADC3_INP9 ← Pololu CS, ~140 mV/A. Add 1 kΩ + 100 nF."],
+    "CN10-5": ["Pololu GND", "plan", "Logic ground to the motor driver."],
+    "CN10-21":["Encoder A", "plan", "TIM4_CH1 (encoder mode) ← goBILDA 5203 A."],
+    "CN10-19":["Encoder B", "plan", "TIM4_CH2 (encoder mode) ← goBILDA 5203 B."],
+    "CN10-17":["Encoder GND", "plan", "Ground for the encoder."],
+    "CN9-15": ["= PE9", "avoid", "Same MCU pin as D6 (CN10-4, motor PWM). Leave this socket empty."],
+    "CN7-5":  ["Ethernet", "avoid", "PB13 is also RMII_TXD1 when JP6 is ON. Keep free for Ethernet telemetry."],
+  };
+
+  const NOTES = {
+    "CN7-14": "UM2407 footnote: PA7 can also appear as D11, and PA7 is Ethernet RMII_CRS_DV when SB31 is ON. Check with a meter before relying on this pin.",
+    "CN7-13": "PB5 also appears on D11 (CN7-14).",
+    "CN9-9":  "Default PC2. PB9 (I2C1_SDA) can be routed here instead by solder bridge.",
+    "CN9-11": "Default PF10. PB8 (I2C1_SCL) can be routed here instead by solder bridge.",
+    "CN9-13": "PB2 also appears on D27 (CN10-15).",
+    "CN10-15":"PB2 also appears on D72 (CN9-13).",
+    "CN9-14": "PE2 also appears on D31 (CN10-25). Only use one function (SB67).",
+    "CN10-25":"PE2 also appears on D56 (CN9-14). Only use one function (SB67).",
+    "CN9-20": "PE6 goes here or to D38 (CN10-28), chosen by SB71/SB73.",
+    "CN10-28":"PE6 goes here or to D59 (CN9-20), chosen by SB71/SB73.",
+    "CN10-4": "PE9 also appears on D71 (CN9-15).",
+    "CN10-14":"LPUART1. Routing to D0/D1 vs the ST-LINK is set by solder bridges (UM2407 Table 11).",
+    "CN10-16":"LPUART1. Routing to D0/D1 vs the ST-LINK is set by solder bridges (UM2407 Table 11).",
+    "CN8-15": "Board power input, 7–12 V. Don't connect anything here while USB powers the board unless the power jumper says so (UM2407 power section).",
+    "CN8-5":  "Pulling this low resets the MCU.",
+    "CN8-9":  "5 V output. One row below 3V3: easy to grab by mistake.",
+  };
+
+  // Jetson J12: [pin, name, default, alternate, soc, cat]
+  const J12 = [
+    [1,"3.3V","Main 3.3 V supply","—","—","pwr"],[2,"5V","Main 5 V supply","—","—","pwr"],
+    [3,"I2C1_SDA","I2C #1 data","—","GP16_I2C8_DAT","com"],[4,"5V","Main 5 V supply","—","—","pwr"],
+    [5,"I2C1_SCL","I2C #1 clock","—","GP15_I2C8_CLK","com"],[6,"GND","Ground","—","—","gnd"],
+    [7,"GPIO09","GPIO","Audio primary clock","GP167","io"],[8,"UART1_TXD","UART #1 TX","GPIO","GP70_UART1_TXD","com"],
+    [9,"GND","Ground","—","—","gnd"],[10,"UART1_RXD","UART #1 RX","GPIO","GP71_UART1_RXD","com"],
+    [11,"UART1_RTS","GPIO","UART RTS","GP72_UART1_RTS_N","com"],[12,"I2S0_SCLK","GPIO","I2S #0 clock","GP122","com"],
+    [13,"SPI1_SCK","GPIO","SPI #1 clock","GP36_SPI3_CLK","com"],[14,"GND","Ground","—","—","gnd"],
+    [15,"GPIO12","GPIO","—","GP88_PWM1","tim"],[16,"SPI1_CS1","GPIO","SPI #1 chip select 1","GP40_SPI3_CS1_N","com"],
+    [17,"3.3V","Main 3.3 V supply","—","—","pwr"],[18,"SPI1_CS0","GPIO","SPI #1 chip select 0","GP39_SPI3_CS0_N","com"],
+    [19,"SPI0_MOSI","GPIO","SPI #0 MOSI","GP49_SPI1_MOSI","com"],[20,"GND","Ground","—","—","gnd"],
+    [21,"SPI0_MISO","GPIO","SPI #0 MISO","GP48_SPI1_MISO","com"],[22,"SPI1_MISO","GPIO","SPI #1 MISO","GP37_SPI3_MISO","com"],
+    [23,"SPI0_SCK","GPIO","SPI #0 clock","GP47_SPI1_CLK","com"],[24,"SPI0_CS0","GPIO","SPI #0 chip select 0","GP50_SPI1_CS0_N","com"],
+    [25,"GND","Ground","—","—","gnd"],[26,"SPI0_CS1","GPIO","SPI #0 chip select 1","GP51_SPI1_CS1_N","com"],
+    [27,"I2C0_SDA","I2C #0 data","GPIO","GP14_I2C2_DAT","com"],[28,"I2C0_SCL","I2C #0 clock","GPIO","GP13_I2C2_CLK","com"],
+    [29,"GPIO01","GPIO","General-purpose clock 0","GP65","io"],[30,"GND","Ground","—","—","gnd"],
+    [31,"GPIO11","GPIO","General-purpose clock 1","GP66","io"],[32,"GPIO07","GPIO","PWM","GP113_PWM7","tim"],
+    [33,"GPIO13","GPIO","PWM","GP115","tim"],[34,"GND","Ground","—","—","gnd"],
+    [35,"I2S0_FS","GPIO","I2S #0 frame select","GP125","com"],[36,"UART1_CTS","GPIO","UART CTS","GP73_UART1_CTS_N","com"],
+    [37,"SPI1_MOSI","GPIO","SPI #1 MOSI","GP38_SPI3_MOSI","com"],[38,"I2S0_DIN","GPIO","I2S #0 data in","GP124","com"],
+    [39,"GND","Ground","—","—","gnd"],[40,"I2S0_DOUT","GPIO","I2S #0 data out","GP123","com"],
+  ];
+  const JNOTE = {
+    1: "Find it with a meter: 3.3 V, at the red-stripe end, odd row.",
+    2: "Find it with a meter: 5 V, at the red-stripe end, even row. Pin 4 next to it is also 5 V.",
+    3: "Straight to the SoC, open-drain, 2.2 kΩ pull-up on the carrier, ±2 mA.",
+    5: "Straight to the SoC, open-drain, 2.2 kΩ pull-up on the carrier, ±2 mA.",
+    27: "Straight to the SoC, open-drain, 1.5 kΩ pull-up on the carrier, ±2 mA.",
+    28: "Straight to the SoC, open-drain, 1.5 kΩ pull-up on the carrier, ±2 mA.",
+    17: "Second 3.3 V pin.",
+  };
+
+  const CATNAME = { pwr: "Power", gnd: "Ground", adc: "Analog in", tim: "Timer / PWM", com: "Comms", io: "GPIO", nc: "Not connected" };
+
+  // ---------------------------------------------------------------- state
+  const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+                  set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+  let tab = (location.hash === "#jetson") ? "jetson" : (location.hash === "#nucleo" ? "nucleo" : (store.get("pin.tab") || "nucleo"));
+  let view = store.get("pin.view") || "top";
+  let flip = store.get("pin.flip") === "1";
+  let query = "";
+  let filter = null;
+  let selN = "CN9-27";
+  let selJ = 1;
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------------------------------------------------------------- nucleo
+  const allN = [];
+  for (const [cn, def] of Object.entries(CN)) {
+    for (const r of def.rows) {
+      const [pin, ard, mcu, sig, fn, cat] = r;
+      const key = `${cn}-${pin}`;
+      allN.push({ key, cn, pin, ard, mcu, sig, fn, cat, proj: PROJ[key], note: NOTES[key] });
+    }
+  }
+  const byKey = Object.fromEntries(allN.map((p) => [p.key, p]));
+
+  function matches(p, text) {
+    if (!text) return true;
+    const t = text.toLowerCase().replace(/\s+/g, "");
+    const hay = [p.key, p.cn + p.pin, p.ard, p.mcu, p.sig, p.fn, CATNAME[p.cat], p.proj ? p.proj[0] + p.proj[2] : "", p.note || ""]
+      .join("|").toLowerCase().replace(/\s+/g, "");
+    return hay.includes(t);
+  }
+  function passFilterN(p) {
+    if (!filter) return true;
+    if (filter === "proj") return !!p.proj;
+    return p.cat === filter;
+  }
+
+  function pinCell(p, isFirst) {
+    const proj = p.proj;
+    const cls = ["pin", "cat-" + p.cat];
+    if (isFirst) cls.push("first");
+    if (proj) cls.push(proj[1] === "avoid" ? "avoid" : "proj", proj[1] === "plan" ? "plan" : "");
+    const showMcu = p.mcu !== "—";
+    const main = showMcu ? `${esc(p.mcu)}<small>${esc(p.ard)}</small>` : esc(p.ard);
+    const fn = p.fn && p.fn !== "—" ? p.fn : p.sig;
+    const tag = proj ? `<span class="tag ${proj[1] === "plan" ? "plan" : proj[1] === "avoid" ? "warn" : ""}">${esc(proj[0])}</span>` : "";
+    return `<button class="${cls.filter(Boolean).join(" ")}" data-k="${p.key}" aria-label="${esc(p.key + " " + p.ard + " " + p.mcu)}">
+      <span class="n">${p.pin}</span><span class="main">${main}</span><span class="fn">${esc(fn)}</span>${tag}</button>`;
+  }
+
+  function connBlock(cn) {
+    const def = CN[cn];
+    const rows = [];
+    for (let i = 0; i < def.rows.length; i += 2) {
+      const odd = byKey[`${cn}-${def.rows[i][0]}`], even = byKey[`${cn}-${def.rows[i + 1][0]}`];
+      // Top view: odd pins in the left column for every connector (UM2407 Figure 16).
+      // Underside: the board is flipped left-right, so columns swap.
+      const pair = view === "top" ? [odd, even] : [even, odd];
+      rows.push(pinCell(pair[0], pair[0].pin === 1) + pinCell(pair[1], pair[1].pin === 1));
+    }
+    return `<div class="conn"><div class="conn-h"><b>${cn}</b><span>${def.pins} pins · pin 1 at top</span></div><div class="rows">${rows.join("")}</div></div>`;
+  }
+
+  function renderBoard() {
+    const left = ["CN8", "CN9"], right = ["CN7", "CN10"];
+    const L = view === "top" ? left : right, R = view === "top" ? right : left;
+    $("#board").innerHTML = `
+      <div class="edge"><span>${view === "top" ? "Top view (parts side)" : "Underside (pins stick out)"}</span><span class="port">ST-LINK USB ↑ this end</span></div>
+      <div class="side">${L.map(connBlock).join("")}</div>
+      <div class="mid"><div class="chip-ic">STM32<br>H723ZG</div></div>
+      <div class="side right">${R.map(connBlock).join("")}</div>
+      <div class="edge"><span class="port">USB OTG</span><span class="port">Ethernet RJ45</span></div>`;
+    $("#viewnote").innerHTML = view === "top"
+      ? "<b>Top view</b>, ST-LINK USB at the top. CN8 + CN9 on the left, CN7 + CN10 on the right. Odd pins are the left column of each connector."
+      : "<b>Underside</b>, ST-LINK USB still at the top. Everything is mirrored: CN8 + CN9 now on the right, and odd pins are the right column.";
+    applyHighlight();
+  }
+
+  function applyHighlight() {
+    document.querySelectorAll("#board .pin").forEach((el) => {
+      const p = byKey[el.dataset.k];
+      const on = matches(p, query) && passFilterN(p);
+      el.classList.toggle("dim", !on);
+      el.classList.toggle("sel", p.key === selN);
+    });
+    let n = 0;
+    document.querySelectorAll("#tbl-n tbody tr").forEach((tr) => {
+      const p = byKey[tr.dataset.k];
+      const on = matches(p, query) && passFilterN(p);
+      tr.classList.toggle("hide", !on);
+      if (on) n++;
+    });
+    $("#count-n").textContent = `${n} of ${allN.length} pins`;
+  }
+
+  function renderTableN() {
+    const order = ["CN7", "CN8", "CN9", "CN10"];
+    const rows = allN.slice().sort((a, b) => order.indexOf(a.cn) - order.indexOf(b.cn) || a.pin - b.pin).map((p) => {
+      const pj = p.proj ? `<td class="proj ${p.proj[1] === "avoid" ? "warn" : ""}">${esc(p.proj[0])}${p.proj[1] === "plan" ? " (planned)" : ""}</td>` : "<td></td>";
+      return `<tr data-k="${p.key}"><td class="mono">${p.cn}-${p.pin}</td><td class="mono">${esc(p.ard)}</td><td class="mono"><span class="sw" style="--c:var(--c-${p.cat})"></span>${esc(p.mcu)}</td><td>${esc(p.fn !== "—" ? p.fn : p.sig)}</td>${pj}</tr>`;
+    });
+    $("#tbl-n tbody").innerHTML = rows.join("");
+  }
+
+  function detailN() {
+    const p = byKey[selN];
+    const pj = p.proj;
+    const neighbors = [];
+    const def = CN[p.cn];
+    const isOdd = p.pin % 2 === 1;
+    const across = byKey[`${p.cn}-${isOdd ? p.pin + 1 : p.pin - 1}`];
+    const above = byKey[`${p.cn}-${p.pin - 2}`], below = byKey[`${p.cn}-${p.pin + 2}`];
+    const nb = (q) => q ? `${q.pin} ${q.mcu !== "—" ? q.mcu : q.ard}` : "edge";
+    const col = view === "top" ? (isOdd ? "left" : "right") : (isOdd ? "right" : "left");
+    const idx = Math.ceil(p.pin / 2);
+    $("#detail").innerHTML = `
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:start">
+        <div><div class="big">${esc(p.mcu !== "—" ? p.mcu : p.ard)}</div><div class="where">${p.cn} pin ${p.pin}${p.ard !== p.mcu ? " · " + esc(p.ard) : ""}</div></div>
+        <span class="chip" style="--c:var(--c-${p.cat}); cursor:default"><span class="dot"></span>${CATNAME[p.cat]}</span>
+      </div>
+      <dl class="kv">
+        <dt>Find it</dt><dd>${col} column, ${idx}${["th","st","nd","rd"][(idx % 10 < 4 && Math.floor(idx / 10) !== 1) ? idx % 10 : 0]} from the top (${view === "top" ? "top view" : "underside"})</dd>
+        <dt>Signal</dt><dd>${esc(p.sig)}</dd>
+        <dt>MCU function</dt><dd>${esc(p.fn)}</dd>
+        <dt>Neighbors</dt><dd>above ${esc(nb(above))} · across ${esc(nb(across))} · below ${esc(nb(below))}</dd>
+      </dl>
+      ${pj ? `<div class="note ${pj[1] === "avoid" ? "warn" : ""}"><b>${esc(pj[0])}${pj[1] === "plan" ? " (planned)" : ""}:</b> ${esc(pj[2])}</div>` : ""}
+      ${p.note ? `<div class="note warn">${esc(p.note)}</div>` : ""}`;
+  }
+
+  // ---------------------------------------------------------------- jetson
+  function matchesJ(r, text) {
+    if (!text) return true;
+    const t = text.toLowerCase().replace(/\s+/g, "");
+    return ["pin" + r[0], String(r[0]), r[1], r[2], r[3], r[4], CATNAME[r[5]], JNOTE[r[0]] || ""].join("|").toLowerCase().replace(/\s+/g, "").includes(t);
+  }
+  function passFilterJ(r) { return !filter || filter === "proj" ? true : r[5] === filter; }
+
+  function renderSocket() {
+    const cell = (r) => {
+      const cls = ["pin", "cat-" + r[5], r[0] === 1 ? "first" : ""].filter(Boolean).join(" ");
+      const fn = r[2] === "GPIO" && r[3] !== "—" ? "GPIO · " + r[3] : r[2];
+      return `<button class="${cls}" data-j="${r[0]}" aria-label="pin ${r[0]} ${esc(r[1])}"><span class="n">${r[0]}</span><span class="main">${esc(r[1])}</span><span class="fn">${esc(fn)}</span></button>`;
+    };
+    const rows = [];
+    for (let i = 0; i < 40; i += 2) {
+      const odd = J12[i], even = J12[i + 1];
+      rows.push(flip ? cell(even) + cell(odd) : cell(odd) + cell(even));
+    }
+    const heads = flip ? ["Even row (2, 4 … 40)", "Odd row (1, 3 … 39)"] : ["Odd row (1, 3 … 39)", "Even row (2, 4 … 40)"];
+    $("#socket").innerHTML = `
+      <div class="stripe"><span class="bar"></span>Red stripe end · pins 1 and 2</div>
+      <div class="colhead"><span>${heads[0]}</span><span>${heads[1]}</span></div>
+      <div class="rows">${rows.join("")}</div>
+      <div class="viewnote">Far end of the ribbon, socket face. Pins 39 and 40 at the bottom.</div>`;
+    $("#flip").setAttribute("aria-pressed", flip ? "true" : "false");
+    applyHighlightJ();
+  }
+  function applyHighlightJ() {
+    document.querySelectorAll("#socket .pin").forEach((el) => {
+      const r = J12[+el.dataset.j - 1];
+      el.classList.toggle("dim", !(matchesJ(r, query) && passFilterJ(r)));
+      el.classList.toggle("sel", r[0] === selJ);
+    });
+    let n = 0;
+    document.querySelectorAll("#tbl-j tbody tr").forEach((tr) => {
+      const r = J12[+tr.dataset.j - 1];
+      const on = matchesJ(r, query) && passFilterJ(r);
+      tr.classList.toggle("hide", !on);
+      if (on) n++;
+    });
+    $("#count-j").textContent = `${n} of 40 pins`;
+  }
+  function renderTableJ() {
+    $("#tbl-j tbody").innerHTML = J12.map((r) => {
+      const shifter = (r[5] === "pwr" || r[5] === "gnd" || [3, 5, 27, 28].includes(r[0])) ? "" : "TXB0108 (weak drive)";
+      const note = JNOTE[r[0]] || shifter;
+      return `<tr data-j="${r[0]}"><td class="mono">${r[0]}</td><td class="mono"><span class="sw" style="--c:var(--c-${r[5]})"></span>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td class="mono">${esc(r[4])}</td><td>${esc(note)}</td></tr>`;
+    }).join("");
+  }
+  function detailJ() {
+    const r = J12[selJ - 1];
+    const isOdd = r[0] % 2 === 1;
+    const idx = Math.ceil(r[0] / 2);
+    const shifter = !(r[5] === "pwr" || r[5] === "gnd" || [3, 5, 27, 28].includes(r[0]));
+    const across = J12[isOdd ? r[0] : r[0] - 2];
+    $("#detail-j").innerHTML = `
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:start">
+        <div><div class="big">${esc(r[1])}</div><div class="where">J12 pin ${r[0]} · ${isOdd ? "odd" : "even"} row, position ${idx} from the stripe</div></div>
+        <span class="chip" style="--c:var(--c-${r[5]}); cursor:default"><span class="dot"></span>${CATNAME[r[5]]}</span>
+      </div>
+      <dl class="kv">
+        <dt>Default</dt><dd>${esc(r[2])}</dd>
+        <dt>Alternate</dt><dd>${esc(r[3])}</dd>
+        <dt>SoC pin</dt><dd>${esc(r[4])}</dd>
+        <dt>Across</dt><dd>pin ${across[0]} ${esc(across[1])}</dd>
+      </dl>
+      ${JNOTE[r[0]] ? `<div class="note">${esc(JNOTE[r[0]])}</div>` : ""}
+      ${shifter ? `<div class="note warn">Through a TXB0108 level shifter: 3.3 V, very weak drive. Good into the Saleae or a chip input.</div>` : ""}`;
+  }
+
+  // ---------------------------------------------------------------- chips
+  function renderChips() {
+    const list = tab === "nucleo"
+      ? [["proj", "This project", "var(--accent)"], ["pwr", "Power", "var(--c-pwr)"], ["gnd", "Ground", "var(--c-gnd)"], ["adc", "Analog", "var(--c-adc)"], ["tim", "Timer/PWM", "var(--c-tim)"], ["com", "Comms", "var(--c-com)"], ["io", "GPIO", "var(--c-io)"]]
+      : [["pwr", "Power", "var(--c-pwr)"], ["gnd", "Ground", "var(--c-gnd)"], ["com", "Comms", "var(--c-com)"], ["tim", "PWM-capable", "var(--c-tim)"], ["io", "GPIO", "var(--c-io)"]];
+    if (filter && !list.some((x) => x[0] === filter)) filter = null;
+    $("#chips").innerHTML = list.map(([k, label, c]) =>
+      `<button class="chip" data-f="${k}" style="--c:${c}" aria-pressed="${filter === k}"><span class="dot"></span>${label}</button>`).join("");
+  }
+
+  // ---------------------------------------------------------------- wiring
+  function setTab(t) {
+    tab = t; store.set("pin.tab", t);
+    $("#tab-nucleo").setAttribute("aria-selected", t === "nucleo");
+    $("#tab-jetson").setAttribute("aria-selected", t === "jetson");
+    $("#panel-nucleo").hidden = t !== "nucleo";
+    $("#panel-jetson").hidden = t !== "jetson";
+    if (location.hash !== "#" + t) history.replaceState(null, "", "#" + t);
+    renderChips(); refresh();
+  }
+  function refresh() { if (tab === "nucleo") { applyHighlight(); detailN(); } else { applyHighlightJ(); detailJ(); } }
+  function setView(v) {
+    view = v; store.set("pin.view", v);
+    $("#v-top").setAttribute("aria-pressed", v === "top");
+    $("#v-bot").setAttribute("aria-pressed", v === "bottom");
+    renderBoard(); detailN();
+  }
+
+  $("#tab-nucleo").addEventListener("click", () => setTab("nucleo"));
+  $("#tab-jetson").addEventListener("click", () => setTab("jetson"));
+  $("#v-top").addEventListener("click", () => setView("top"));
+  $("#v-bot").addEventListener("click", () => setView("bottom"));
+  $("#flip").addEventListener("click", () => { flip = !flip; store.set("pin.flip", flip ? "1" : "0"); renderSocket(); });
+  $("#q").addEventListener("input", (e) => { query = e.target.value.trim(); refresh(); });
+  $("#chips").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-f]"); if (!b) return;
+    filter = filter === b.dataset.f ? null : b.dataset.f; renderChips(); refresh();
+  });
+  document.addEventListener("click", (e) => {
+    const n = e.target.closest("[data-k]");
+    if (n) { selN = n.dataset.k; applyHighlight(); detailN(); if (n.tagName === "TR") document.querySelector(`#board [data-k="${selN}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); return; }
+    const j = e.target.closest("[data-j]");
+    if (j) { selJ = +j.dataset.j; applyHighlightJ(); detailJ(); if (j.tagName === "TR") document.querySelector(`#socket [data-j="${selJ}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  });
+  window.addEventListener("hashchange", () => { if (location.hash === "#jetson" || location.hash === "#nucleo") setTab(location.hash.slice(1)); });
+
+  renderTableN(); renderTableJ(); renderSocket();
+  $("#v-top").setAttribute("aria-pressed", view === "top");
+  $("#v-bot").setAttribute("aria-pressed", view === "bottom");
+  renderBoard();
+  setTab(tab);
+})();
+</script>
+
+</body>
+</html>
