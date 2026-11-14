@@ -116,4 +116,5 @@ Optional shortcuts, in your own keybindings (`Cmd + Shift + P` → Preferences: 
 - [Worklog](docs/worklog.md): day-by-day progress
 - [Firmware architecture](docs/firmware-architecture.md): tasks, priorities, logging, memory
 - [Results](docs/results/): raw measurements
+- [CAN wiring](hardware/can-wiring.md): bus layout, pins on both ends, checks
 - [Pinouts](hardware/pinouts.html): Nucleo Zio headers and Jetson 40-pin, with this project's pins marked (open locally in a browser)

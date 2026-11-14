@@ -2,9 +2,36 @@
 
 A rolling log for the project's work.
 
+## 2026-11-13
+CAN fault injection (CANable's driver isn't loaded, so the Nucleo and Jetson are the only active nodes):
+
+| Test | Nucleo | Jetson |
+|---|---|---|
+| Jetson `can0` down, Nucleo sends | TEC 128, error passive, stays there | (off the bus) |
+| Nucleo TX (PD1) unplugged, Jetson sending | BUS OFF after one send; still receives | ERROR-PASSIVE, TEC 128, retransmits nonstop |
+| TX plugged back in | stays BUS OFF until reset | recovers 1 per acknowledged frame |
+
+- A node with nobody to ACK it climbs to error passive and stops at 128: an error-passive transmitter doesn't count ACK errors.
+- TEC only comes down on successful transmissions. After test A the Nucleo sat at 127 while receiving 2,000 frames.
+- Auto retransmission resends an unacknowledged frame back to back: ~435,620 bus errors in about a minute on the Jetson, and its TX queue filled behind the stuck frame (`cangen`: "No buffer space available").
+- The Nucleo received those retransmissions as valid frames (rx 781 -> 2193 during the fault): once the sender is error passive, its error flag is recessive and doesn't cancel the frame for receivers. CAN can deliver duplicates, so the protocol frames get a rolling counter.
+- The Nucleo stays bus off until FDCAN is restarted (on the M_CAN, bus off sets CCCR.INIT). Today that's a reset; the supervisor will handle it. The Jetson recovers by itself (`restart-ms 100`). Bringing `can0` down and up doesn't reset mttcan's error counters.
+- A broken TX wire only shows from the other side: the Nucleo looked healthy (receiving, no TX errors) until it tried to send.
+- `can` now prints the controller state with the warning level: `ok (error active)`, `ok, error count >= 96 (warning)`, `degraded (error passive)`, `BUS OFF (stopped, needs restart)`. The spec's "error active" means allowed to signal errors, not that an error is happening, so the label says ok.
+- J17: pin 1 is TX, matching the carrier silkscreen and the carrier board spec. Wiring written up in `hardware/can-wiring.md`. CANable's `gs_usb` driver isn't in this JetPack kernel; it stays on the bus as the shared ground path for now.
+- Raw output in `docs/results/2026-11-13-can-fault-injection.txt`. Ref: Bosch CAN Specification 2.0, fault confinement section.
+
+Saved for next time:
+- Bus-off recovery in the supervisor: detect `bus_off`, log, restart FDCAN with a backoff, FAULT if it repeats
+- Rolling counter in the protocol frames (duplicates are real)
+- FDCAN TX queue in priority order (Tx Queue mode) instead of FIFO, so a low-priority frame can't hold up the heartbeat
+- Direct GND wire between the Nucleo side and J17 so the CANable isn't the only shared ground
+- Photos in `hardware/photos/`
+- Clock check, supervisor liveness check, `clear_fault` as a message, MAXN SUPER
+
 ## 2026-11-06
 CAN bus between the Jetson and the Nucleo:
-- Bus: Nucleo and Jetson at the two ends, each with an SN65HVD230 (3.3 V, 120 Ω on board). CANable in the middle with its termination off. 59.6 Ω across CAN-H/CAN-L with power off. GND wire between the Nucleo and Jetson sides (Nucleo is grounded through the Mac's USB, the Jetson through its own supply).
+- Bus: Nucleo and Jetson at the two ends, each with an SN65HVD230 (3.3 V, 120 Ω on board). CANable in the middle with its termination off. 59.6 Ω across CAN-H/CAN-L with power off. The two sides share ground through the CANable's USB ground to the Jetson (Nucleo is grounded through the Mac's USB, the Jetson through its own supply).
 - Jetson J17: soldered a 1×4 header, broken out of the case on jumpers. Bring-up is `tools/jetson/can_up.sh`: pinmux (two registers, values from NVIDIA's CAN guide, lost on every reboot, so the script reads them back), `can`/`can_raw`/`mttcan` modules, 1 Mbps, 80% sample point, `restart-ms 100`, bus error reporting.
 - J17 pin order: the carrier board spec and NVIDIA's CAN guide disagree on which of pins 1/2 is TX. Checked on the bench instead: with the bus idle, the transceiver drives RX high; a J17 RX pin sitting low means the controller sees a busy bus and never starts sending (no errors either, the frame just sits in the queue).
 - Nucleo pins on the CN9 Zio connector: PD1 (TX) pin 27, PD0 (RX) pin 25, GND pin 23, 3V3 on CN8 pin 7. Checked PD1 first in external loopback with the Saleae before wiring the transceiver: frames decode (id 0x7F0, seq + inverted seq), 5-bit run 4.99 µs, 6-bit run 5.99 µs, so 1 Mbps. Frame to frame ~127 µs (~7,900 frames/s), and the RX ISR turns around the next TX in ~1-4 µs.
@@ -32,8 +59,6 @@ CAN bus between the Jetson and the Nucleo:
 - Also: SSH key login to the Jetson (`ssh jetson`).
 
 Saved for next time:
-- Fault injection: pull CAN-H, watch error passive / bus off on both sides. Nucleo needs software to recover from bus off (`restart-ms` covers the Jetson)
-- `hardware/can-wiring.md`
 - Photos: README hero shot, J17 breakout and bus wiring in `hardware/photos/`, Saleae decode in `docs/results/` (JPEG ~1600 px, GPS stripped)
 - Clock check, supervisor liveness check, `clear_fault` as a message, MAXN SUPER
 

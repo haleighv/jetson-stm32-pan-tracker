@@ -97,6 +97,8 @@ Rules:
 - `can_send()` doesn't log: it runs in the ISR during the self-test, and a full TX FIFO is normal under load (counted as `tx_full`).
 - Counters are written by the RX callback and `can_send()`. `can_get_stats()` copies them in a critical section (masks the FDCAN interrupt) so readers get a consistent set.
 - Self-test (`can test <n>`): ping-pong, one frame in flight, payload = seq + bitwise NOT of seq. Counts lost frames (seq jumps) and corrupted ones (halves disagree).
+- Bus off: the M_CAN sets CCCR.INIT and stays off the bus until software restarts it (measured 2026-11-13). Today that's a board reset; the supervisor will detect `bus_off`, log it, restart FDCAN with a backoff, and FAULT if it repeats.
+- `can` prints the controller state: ok (error active), warning (>= 96), degraded (error passive), BUS OFF.
 - Milestone 2: ISR notifies a host_comms task that drains FIFO0, decodes, and posts setpoints/heartbeat on the message bus (top half / bottom half).
 
 ## Interrupt priorities

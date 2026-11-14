@@ -1,0 +1,77 @@
+# CAN fault injection, Nucleo <-> Jetson
+# Captured: 2026-11-13
+# Bus:      classic CAN, 1 Mbps, Nucleo FDCAN1 + Jetson mttcan (J17). CANable on the bus but
+#           its driver isn't loaded (gs_usb not in this JetPack kernel), so it neither sends nor
+#           ACKs: the Nucleo and the Jetson are the only active nodes.
+# Summary:
+#   A. Jetson can0 down, Nucleo sends:  Nucleo TEC 128, error passive, and stays there (an
+#      error-passive node whose only error is a missing ACK doesn't count further). Jetson back
+#      up: the pending frame goes through, TEC 127 (warning). TEC only drops on successful
+#      transmissions, so receiving 2,000 frames afterwards left it at 127.
+#   B. Nucleo PD1 (TX) unplugged at the transceiver, Jetson sending every 10 ms:
+#      - Nucleo: one `can send` -> bit errors on every retry -> BUS OFF in milliseconds.
+#        It keeps receiving (rx climbing) but can't ACK.
+#      - Jetson: nobody ACKs its frames -> ERROR-PASSIVE, TEC 128, stays. Auto retransmission
+#        resends the same frame back to back: ~435,620 bus errors in about a minute (first run).
+#        TX queue fills behind the stuck frame; cangen gets ENOBUFS.
+#      - The Nucleo receives each retransmission as a valid frame (an error-passive
+#        transmitter's error flag is recessive): rx 781 -> 2193 during the fault. Duplicates.
+#      - PD1 back in: Nucleo stays BUS OFF until reset (M_CAN needs software to clear INIT).
+#        Jetson stays error passive until a node can ACK again, then recovers 1 per good frame.
+#        `ip link set can0 down/up` does not reset mttcan's error counters.
+#      - Seen only from the other node: with TX broken, the Nucleo itself looked healthy from
+#        its own side (receiving, no TX errors) until it tried to send.
+# Raw output follows.
+
+## Test A
+> can send 321 0102030405060708
+sent 321 [8]
+> can
+tx 1, tx_full 0
+rx 1, seq_gaps 0, bad_data 0
+tec 0, rec 0, ok (error active)
+                                   (Jetson: sudo ip link set can0 down)
+> can send 123 DEADBEEF
+sent 123 [4]
+> can
+tx 2, tx_full 0
+rx 1, seq_gaps 0, bad_data 0
+tec 128, rec 0, degraded (error passive)
+                                   (Jetson: can0 back up, frame delivered)
+> can
+tx 2, tx_full 0
+rx 1, seq_gaps 0, bad_data 0
+tec 127, rec 0, ok, error count >= 96 (warning)
+
+## Test B (clean rerun)
+> can clear
+> can
+tx 0, tx_full 0
+rx 781, seq_gaps 0, bad_data 0
+tec 0, rec 0, ok (error active)
+                                   (PD1 unplugged)
+> can send 123 DEADBEEF
+sent 123 [4]
+> can
+tx 1, tx_full 0
+rx 2193, seq_gaps 0, bad_data 0
+tec 248, rec 127, BUS OFF (stopped, needs restart)
+                                   (PD1 plugged back in)
+> can
+tx 1, tx_full 0
+rx 2193, seq_gaps 0, bad_data 0
+tec 248, rec 127, BUS OFF (stopped, needs restart)
+
+$ ip -details -statistics link show can0      # during the fault
+    can <BERR-REPORTING> state ERROR-PASSIVE (berr-counter tx 128 rx 0) restart-ms 100
+          re-started bus-errors arbit-lost error-warn error-pass bus-off
+          0          1976651    0          3          4          0
+    (bus-errors is cumulative since boot, both runs of test B)
+
+$ cangen can0 -g 10 -I 123 -L 8               # while nobody could ACK
+write: No buffer space available
+
+                                   (Nucleo reset)
+$ cangen can0 -g 1 -n 200 -I 123 -L 8
+$ ip -details -statistics link show can0 | grep -A1 state
+    can <BERR-REPORTING> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 100
