@@ -12,9 +12,9 @@ STM32H723 (NUCLEO-H723ZG) firmware for the pan axis. Skeleton from [plan.md](pla
 | Function | Peripheral | Pins | Notes |
 |---|---|---|---|
 | Control tick | TIM6 (basic timer), 1 kHz | - | PSC 259, ARR 999 from the 260 MHz APB1 timer clock |
-| Motor PWM | TBD timer, 20 kHz | TBD | VNH5019 INA/INB/PWM |
-| Encoder | TBD timer in encoder mode | TBD | goBILDA 5203, ~752 counts/output rev |
-| Motor current | ADC | TBD | VNH5019 CS pin |
+| Motor PWM | TIM1_CH1, 20 kHz (PSC 0, ARR 12999 from 260 MHz) | PE9 (CN10-4) | Pololu VNH5019 carrier. INA PE11 (CN10-6), INB PE14 (CN10-8), both start low. ENA/ENB tied to PE13 (CN10-10), open drain: low = fault or forced off. Planned |
+| Encoder | TIM4 encoder mode, TI1 and TI2 (x4) | PD12 A (CN10-21), PD13 B (CN10-19) | goBILDA 5203 26.9:1, 751.8 counts/output rev (0.479°/count), 3.3 V. Planned |
+| Motor current | ADC3_INP9 | PF4 (CN10-7) | VNH5019 CS ~140 mV/A, 1 kΩ + 100 nF filter. Only valid while driving. Planned |
 | CAN | FDCAN1, classic 2.0A, 1 Mbps | PD0 (RX), PD1 (TX) | external transceiver. Kernel 130 MHz (PLL1Q), prescaler 5, 26 tq, 80.8% sample point, SJW 5. Normal mode, on the bus with the Jetson (J17) |
 | Telemetry | ETH (RMII) | on-board PHY | |
 | Console/log | USART3, 115200 8N1 | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
