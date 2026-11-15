@@ -2,6 +2,12 @@
 
 A rolling log for the project's work.
 
+## 2026-11-14
+- Bambu A1 printer, learning Fusion. First part: an enclosure for the Pololu VNH5019 carrier, ahead of motor bring-up.
+- Shell with slotted vents on two sides, four holes for VIN/GND/OUTA/OUTB, a slot for the 10-pin logic ribbon, and screw posts with heat-set threaded inserts. Base plate with standoffs placed from Pololu's DXF of the board, plus windows to read the pin silkscreen from underneath.
+- Printed in PETG: it holds up near the driver's heat, where PLA softens around 55-60 °C.
+- Files in `hardware/cad/` (STEP for each part, Bambu 3MF), photos and CAD renders in `hardware/photos/`, public print profile on [MakerWorld](https://makerworld.com/en/models/3612437-vnh5019-enclosure#profileId-4140255).
+
 ## 2026-11-13
 CAN fault injection (CANable's driver isn't loaded, so the Nucleo and Jetson are the only active nodes):
 
@@ -26,7 +32,7 @@ Saved for next time:
 - Rolling counter in the protocol frames (duplicates are real)
 - FDCAN TX queue in priority order (Tx Queue mode) instead of FIFO, so a low-priority frame can't hold up the heartbeat
 - Direct GND wire between the Nucleo side and J17 so the CANable isn't the only shared ground
-- Photos in `hardware/photos/`
+- Photos of the CAN wiring in `hardware/photos/`
 - Clock check, supervisor liveness check, `clear_fault` as a message, MAXN SUPER
 
 ## 2026-11-06

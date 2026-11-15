@@ -73,7 +73,7 @@ firmware/
   nucleo/     NUCLEO-H723ZG target: CubeMX BSP (Core/, Drivers/, .ioc) + app/
   scripts/    build.sh, test.sh (host), build_nucleo.sh, flash.sh (target)
 ros2_ws/      ROS 2 packages (camera, apriltag, tracker, can_bridge)
-hardware/     BOM, wiring
+hardware/     wiring, pinouts, CAD (STEP/3MF), photos
 docs/         plan, worklog, firmware architecture, results/
 tools/        analysis scripts (jitter, step response, latency)
 ```
@@ -117,4 +117,5 @@ Optional shortcuts, in your own keybindings (`Cmd + Shift + P` → Preferences: 
 - [Firmware architecture](docs/firmware-architecture.md): tasks, priorities, logging, memory
 - [Results](docs/results/): raw measurements
 - [CAN wiring](hardware/can-wiring.md): bus layout, pins on both ends, checks
+- [CAD](hardware/cad/): 3D-printed enclosure for the motor driver (STEP, 3MF)
 - [Pinouts](hardware/pinouts.html): Nucleo Zio headers and Jetson 40-pin, with this project's pins marked (open locally in a browser)
