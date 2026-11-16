@@ -16,3 +16,15 @@ Design:
 - PETG for heat: it holds up near the driver at higher currents where PLA (softens ~55-60 °C) wouldn't.
 
 Photos: `../photos/vnh5019-*`.
+
+## CAN transceiver housing (USB-C)
+
+Housing for an SN65HVD230 CAN transceiver board plus a USB-C breakout, so a USB-C cable can carry CAN-H, CAN-L and GND between nodes. "CAN" is embossed on the lid so it doesn't get mistaken for a USB device. Printed in PETG on the Bambu A1. Public print profile: [MakerWorld](https://makerworld.com/en/models/3621895-sn65hvd230-can-enclosure-with-usb-c-panel-port#profileId-4152002).
+
+| File | What |
+|---|---|
+| `can-sn65hvd230-usb-shell-v2.step` | Shell with the USB-C opening |
+| `can-sn65hvd230-base.step` | Lid / base plate |
+| `can-sn65hvd230-usb-enclosure.3mf` | Bambu Studio project (PETG profile) |
+
+Photos: `../photos/can-usb-*`. Tested: 10,000 CAN round trips over the cable, 0 errors, plug works both ways up.

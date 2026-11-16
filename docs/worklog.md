@@ -2,6 +2,10 @@
 
 A rolling log for the project's work.
 
+## 2026-11-15
+- CAN over USB-C: SN65HVD230 board and a USB-C breakout in a printed PETG housing ("CAN" embossed on the lid), and a USB-C cable carrying CAN-H, CAN-L and GND. Files in `hardware/cad/can-sn65hvd230-*`, photos `hardware/photos/can-usb-*`. Print profile on [MakerWorld](https://makerworld.com/en/models/3621895-sn65hvd230-can-enclosure-with-usb-c-panel-port#profileId-4152002). Continuity checked with the plug both ways up (same mapping).
+- Load test over it: `can test 10000` with `can_echo.py` on the Jetson, 10,000/10,000 round trips, 0 gaps, 0 bad data. Nucleo TEC/REC 0; Jetson ERROR-ACTIVE, 0 bus errors, RX 10,000 frames. Details in `hardware/can-wiring.md`.
+
 ## 2026-11-14
 - Bambu A1 printer, learning Fusion. First part: an enclosure for the Pololu VNH5019 carrier, ahead of motor bring-up.
 - Shell with slotted vents on two sides, four holes for VIN/GND/OUTA/OUTB, a slot for the 10-pin logic ribbon, and screw posts with heat-set threaded inserts. Base plate with standoffs placed from Pololu's DXF of the board, plus windows to read the pin silkscreen from underneath.

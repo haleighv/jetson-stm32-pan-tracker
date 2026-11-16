@@ -14,6 +14,7 @@ Nucleo FDCAN1 --[SN65HVD230 + 120 Ω]==== CAN-H / CAN-L ====[SN65HVD230 + 120 Ω
 - CANable sits in the middle with its termination off. Its USB goes to the Jetson.
 - Ground: the two sides share ground through the CANable's USB ground to the Jetson. If the CANable comes off the bus, run a GND wire from the Nucleo-side transceiver to J17 pin 3.
 - Twisted pair for CAN-H/CAN-L, short runs (bench, under 1 m).
+- Cable: a USB-C cable reused for CAN (CAN-H, CAN-L, GND). The SN65HVD230 board and a USB-C breakout sit in a 3D-printed housing with "CAN" on the lid (`cad/can-sn65hvd230-*`, photos `photos/can-usb-*`). Works in either plug orientation. **It isn't USB:** never plug either end into a real USB port.
 
 ## Nucleo (FDCAN1)
 
@@ -46,6 +47,8 @@ TX goes to TX and RX to RX: the transceiver's TX pin is its input from the contr
 | CAN-H to CAN-L, power off | ~60 Ω (two 120 Ω) | 59.6 Ω |
 | CAN-H and CAN-L, powered, idle | equal, ~2.3 V (recessive) | 2.22 V / 2.22 V |
 | Each controller's RX pin, idle | high | high |
+| USB-C CAN cable, 10k round trips (`can test 10000` + `can_echo.py`) | 0 gaps, 0 errors | 10000/10000, TEC/REC 0 both ends, 0 bus errors |
+| USB-C cable flipped | same continuity | same |
 
 ## Bring-up
 
