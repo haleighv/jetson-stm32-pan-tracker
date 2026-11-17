@@ -2,6 +2,28 @@
 
 A rolling log for the project's work.
 
+## 2026-11-16
+Motor bring-up, part 1 (CubeMX):
+- TIM1 CH1 PWM on PE9: PSC 0, ARR 12999, so 20 kHz from the 260 MHz timer clock with 13,000 duty steps. CH1N off, the VNH5019 does its own bridge timing.
+- TIM4 encoder on PD12/PD13 (AF2): TI1 and TI2 (x4), period 65535, pull-ups, input filter 6 on both channels. CubeMX sets the filter per channel; CH2 was still 0 after the first pass.
+- INA/INB on PE11/PE14, push-pull, start low. EN/DIAG on PE13, open drain, starts released (high), no pull. `HAL_GPIO_ReadPin` reads IDR (the actual pin) even in output mode, so a driver fault is ODR 1 with IDR 0. Driving it low to disable also reads 0, so that isn't a fault.
+- ADC3 IN9 on PF4: PLL2P 96 MHz / 8 = 12 MHz, 92.5-cycle sampling (~7.7 µs). ADC3 has its own sample time list (2.5 to 640.5 cycles, no 64.5). The 100 nF at the pin supplies the sampling charge, so 2.5 cycles would also work; 92.5 is margin. PLL2 is only used by the ADC, FDCAN stays on PLL1Q at 130 MHz.
+
+Wiring (jumper hub):
+- Out of 3.3 V pins: CN8-7 is the only 3V3 socket on the Zio headers. CN8-3 (IOREF) is also 3.3 V (tied to the MCU supply by SB10/SB11/SB20), and the morpho headers (CN11/CN12) aren't populated on this board.
+- Built a jumper hub on a 24×18 proto board instead of loose jumpers. One column of pins jumpered to the Nucleo (12 jumpers, in CN8/CN9/CN10 order), one header per device on the other side: J1 CAN transceiver, J2 Pololu, J3 encoder. One signal per row, top-side 3V3 and GND buses, Saleae test pins on every signal.
+- On the hub: ENA/ENB tied together (straight-through Pololu ribbon) and the CS filter, 1 kΩ in series + 100 nF to GND at the Nucleo side (~1.6 kHz corner, smooths the 20 kHz PWM ripple for the ADC).
+- Two GND jumpers (CN9-23, CN10-5). One is enough electrically; the second covers a jumper working loose. Motor current never goes through the hub or the Nucleo, only supply to Pololu.
+- CAN re-verified through the hub.
+- Lab reference: VNH5019 datasheet (truth table, fault latch), [Pololu VNH5019 carrier](https://www.pololu.com/product/1451), ST UM2407 Zio tables 19-21.
+
+Saved for next time:
+- Motor bring-up part 2: wire the Pololu and encoder through the hub, meter checks before power
+- Part 3: `motor.c`/`motor.h`, auto-stop, `motor` CLI commands, `motor_fault()` as ODR 1 and IDR 0
+- Photos and a wiring table for the hub board in `hardware/`
+- Bus-off recovery in the supervisor, rolling counter in protocol frames, FDCAN TX queue in priority order
+- Direct GND wire between the Nucleo side and J17
+
 ## 2026-11-15
 - CAN over USB-C: SN65HVD230 board and a USB-C breakout in a printed PETG housing ("CAN" embossed on the lid), and a USB-C cable carrying CAN-H, CAN-L and GND. Files in `hardware/cad/can-sn65hvd230-*`, photos `hardware/photos/can-usb-*`. Print profile on [MakerWorld](https://makerworld.com/en/models/3621895-sn65hvd230-can-enclosure-with-usb-c-panel-port#profileId-4152002). Continuity checked with the plug both ways up (same mapping).
 - Load test over it: `can test 10000` with `can_echo.py` on the Jetson, 10,000/10,000 round trips, 0 gaps, 0 bad data. Nucleo TEC/REC 0; Jetson ERROR-ACTIVE, 0 bus errors, RX 10,000 frames. Details in `hardware/can-wiring.md`.
