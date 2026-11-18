@@ -25,7 +25,6 @@ Motor bring-up, part 7:
 
 Saved for next time:
 - Fix the clock: ST-LINK firmware upgrade with MCO = HSE/5 (5 MHz), CubeMX HSE input 5 MHz, re-solve PLL1 (520 MHz SYSCLK, 260 MHz TIM1, 130 MHz FDCAN) and PLL2 (96 MHz ADC), rerun `tools/clock_drift.py` (expect under about 50 ppm)
-- Correct the motor lab: stop and reversal brake need PWM high
 - Results file for the session in `docs/results/`
 - `motor_tick()` in the control tick (see 2026-11-16)
 
@@ -42,7 +41,7 @@ Wiring (jumper hub):
 - On the hub: ENA/ENB tied together (straight-through Pololu ribbon) and the CS filter, 1 kΩ in series + 100 nF to GND at the Nucleo side (~1.6 kHz corner, smooths the 20 kHz PWM ripple for the ADC).
 - Two GND jumpers (CN9-23, CN10-5). One is enough electrically; the second covers a jumper working loose. Motor current never goes through the hub or the Nucleo, only supply to Pololu.
 - CAN re-verified through the hub.
-- Lab reference: VNH5019 datasheet (truth table, fault latch), [Pololu VNH5019 carrier](https://www.pololu.com/product/1451), ST UM2407 Zio tables 19-21.
+- References: VNH5019 datasheet (truth table, fault latch), [Pololu VNH5019 carrier](https://www.pololu.com/product/1451), ST UM2407 Zio tables 19-21.
 
 Saved for next time:
 - Motor bring-up part 2: wire the Pololu and encoder through the hub, meter checks before power
@@ -50,7 +49,7 @@ Saved for next time:
 - Photos and a wiring table for the hub board in `hardware/`
 - Bus-off recovery in the supervisor, rolling counter in protocol frames, FDCAN TX queue in priority order
 - Direct GND wire between the Nucleo side and J17
-- Move `motor_poll()` from the 10 ms supervisor loop into the 1 kHz control tick as `motor_tick()`: encoder extension, fault-line backup and the run deadline (counted in control ticks, since TIM6 at priority 4 can't make FreeRTOS calls). The tick becomes the only writer of the bridge and `position`; tasks post requests (`cmd_pending` set last with `__DMB()`, zero/stop flags) and never touch CCR1/INA/INB. Fault EXTI sets the latch first, then safes the bridge. `motor_current_ma()` stays in task context (ADC polling waits). Update the lab and the stubs to match.
+- Move `motor_poll()` from the 10 ms supervisor loop into the 1 kHz control tick as `motor_tick()`: encoder extension, fault-line backup and the run deadline (counted in control ticks, since TIM6 at priority 4 can't make FreeRTOS calls). The tick becomes the only writer of the bridge and `position`; tasks post requests (`cmd_pending` set last with `__DMB()`, zero/stop flags) and never touch CCR1/INA/INB. Fault EXTI sets the latch first, then safes the bridge. `motor_current_ma()` stays in task context (ADC polling waits).
 
 ## 2026-11-15
 - CAN over USB-C: SN65HVD230 board and a USB-C breakout in a printed PETG housing ("CAN" embossed on the lid), and a USB-C cable carrying CAN-H, CAN-L and GND. Files in `hardware/cad/can-sn65hvd230-*`, photos `hardware/photos/can-usb-*`. Print profile on [MakerWorld](https://makerworld.com/en/models/3621895-sn65hvd230-can-enclosure-with-usb-c-panel-port#profileId-4152002). Continuity checked with the plug both ways up (same mapping).
@@ -202,7 +201,7 @@ Saved for next time:
 Saved for next time:
 - Check bus, LED task, and sync on the board (boot log order, `msgs` shows 0 unrouted, fade)
 - `clear_fault` from the CLI should post a message to the supervisor instead of changing its state directly
-- Lab 5: start TIM6 control tick, liveness check, `jitter` command, Saleae captures idle + loaded
+- Start TIM6 control tick, liveness check, `jitter` command, Saleae captures idle + loaded
 - Architecture doc: message bus, task sync, LED ownership
 - SSH key login
 - Check for MAXN SUPER
