@@ -9,3 +9,5 @@ freerouting.*
 temp-freerouting.*
 DRC.json
 DRC.rpt
+# Plot output; the ordered set is committed as a zip
+fab/
