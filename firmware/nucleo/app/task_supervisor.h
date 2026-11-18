@@ -25,6 +25,16 @@ typedef enum {
     SUPERVISOR_STATE_COUNT
 } supervisor_state_t;
 
+typedef enum {
+    SUPERVISOR_ERR_FAULT       = 1<<0,
+    SUPERVISOR_MOTOR_FAULT     = 1<<1,
+    SUPERVISOR_HEARTBEAT_FAULT = 1<<2,
+} supervisor_fault_t;
+
+typedef struct {
+    uint8_t active_faults;
+} supervisor_status_t;
+
 void task_supervisor(void *arg);
 
 /* Getters: safe from any task (single-word reads) */

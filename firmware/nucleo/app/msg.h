@@ -89,6 +89,9 @@ bool msg_post_from_isr(const msg_t *m, BaseType_t *woken);
 /* Subscriber only: wait for its next message. */
 bool msg_recv(msg_queue_id_t self, msg_t *m, TickType_t timeout);
 
+/* Post a message with just the event field */
+void event_post(event_id_t event);
+
 void        msg_get_stats(msg_stats_t *out);
 const char *msg_queue_name(msg_queue_id_t queue_id);
 uint32_t    msg_queue_dropped(msg_queue_id_t queue_id);     /* delivery queue full */

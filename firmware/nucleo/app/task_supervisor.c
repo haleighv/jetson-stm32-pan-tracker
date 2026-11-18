@@ -15,22 +15,23 @@
  * SPDX-License-Identifier: MIT
  */
 #define LOG_TAG "supervisor"
+#include "events.h"
 #include "task_supervisor.h"
 #include "log.h"
 #include "msg.h"
 #include "control.h"
 #include "can.h"
 #include "task_utilities.h"
-
+#include "motor.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
 #define CONTROL_WARMUP_MS   1000    /* jitter stats restart after this */
 
 static TickType_t xLastStateChangeTime;   /* tick count when the state last changed */
-
 static supervisor_state_t state = SUPERVISOR_BOOT;
 static msg_queue_id_t supervisor_msg_queue_id;
+static supervisor_status_t supervisor_status = {0};
 static const char * const state_names[] = {
     [SUPERVISOR_BOOT] = "SUPERVISOR_BOOT",
     [SUPERVISOR_IDLE] = "SUPERVISOR_IDLE",
@@ -85,6 +86,10 @@ static void initialize(void)
 {
     event_id_t event_table[] = {
         EVENT_ERROR,
+        EVENT_MOTOR_FAULT,
+        EVENT_MOTOR_START,
+        EVENT_MOTOR_STOP,
+        EVENT_MOTOR_FAULT_CLEARED,
     };
 
     /* Subscribe to messages */
@@ -104,9 +109,27 @@ static void handle_messages(void)
         switch (message.id) {
         case EVENT_ERROR:
             LOG_E("error event (code %ld)", (long)message.data.i32[0]);
+            supervisor_status.active_faults |= SUPERVISOR_ERR_FAULT;
             if (state != SUPERVISOR_FAULT) {
                 supervisor_set_state(SUPERVISOR_FAULT);
             }
+            break;
+        case EVENT_MOTOR_START:
+            LOG_I("EVENT_MOTOR_START");
+            break;
+        case EVENT_MOTOR_STOP:
+            LOG_I("EVENT_MOTOR_STOP");
+            break;
+        case EVENT_MOTOR_FAULT:
+            LOG_E("EVENT_MOTOR_FAULT");
+            supervisor_status.active_faults |= SUPERVISOR_MOTOR_FAULT;
+            if (state != SUPERVISOR_FAULT) {
+                supervisor_set_state(SUPERVISOR_FAULT);
+            }
+            break;
+        case EVENT_MOTOR_FAULT_CLEARED:
+            LOG_I("EVENT_MOTOR_FAULT_CLEARED");
+            supervisor_status.active_faults &= ~SUPERVISOR_MOTOR_FAULT;
             break;
         default:
             LOG_W("unexpected event %u", message.id);
@@ -125,6 +148,7 @@ void task_supervisor(void *arg)
     /* Start the control tick and CAN only after every task is up */
     control_start();
     can_start();
+    motor_start();
 
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 10;
@@ -149,25 +173,34 @@ void task_supervisor(void *arg)
             warmup_done = true;
             LOG_I("warm-up done, jitter stats restarted");
         }
+        switch (state) {
+            case SUPERVISOR_BOOT:
+                if (warmup_done) {
+                    supervisor_set_state(SUPERVISOR_IDLE);
+                }
 
-    switch (state) {
-        case SUPERVISOR_BOOT:
-            supervisor_set_state(SUPERVISOR_IDLE);
-            break;
-        case SUPERVISOR_IDLE:
-            vTaskDelayUntil(&xLastWakeTime, xFrequency);
-            break;
-        case SUPERVISOR_ARMED:
-            vTaskDelayUntil(&xLastWakeTime, xFrequency);
-            break;
-        case SUPERVISOR_FAULT:
-            vTaskDelayUntil(&xLastWakeTime, 1000);
-            vTaskDelayUntil(&xLastWakeTime, 1000);
-            break;
-        default:
-            LOG_E("unknown state %d", (int)state);
-            state = SUPERVISOR_FAULT;
-            break;
+                break;
+            case SUPERVISOR_IDLE:
+                break;
+            case SUPERVISOR_ARMED:
+                break;
+            case SUPERVISOR_FAULT:
+                /* Will leave this to CLI for now
+                if (supervisor_status.active_faults & SUPERVISOR_MOTOR_FAULT) {
+                    motor_clear_fault();
+                }
+                */
+                if (!supervisor_status.active_faults) {
+                    supervisor_set_state(SUPERVISOR_IDLE);
+                }
+                break;
+            default:
+                LOG_E("unknown state %d", (int)state);
+                state = SUPERVISOR_FAULT;
+                break;
         }
+        motor_poll();
+        /* Run the loop every 10ms */
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }

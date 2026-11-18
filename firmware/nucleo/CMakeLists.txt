@@ -76,6 +76,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ../lib/led_fade.c
     app/control.c
     app/can.c
+    app/motor.c
 )
 
 # Add include paths

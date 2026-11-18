@@ -23,6 +23,8 @@ typedef enum {
     EVENT_TARGET_UPDATED,
     EVENT_MOTOR_START,
     EVENT_MOTOR_STOP,
+    EVENT_MOTOR_FAULT,
+    EVENT_MOTOR_FAULT_CLEARED,
     EVENT_LIMIT_REACHED,
     EVENT_ERROR,
     EVENT_LED_CMD,          /* data.led: set an LED's mode (task_led) */

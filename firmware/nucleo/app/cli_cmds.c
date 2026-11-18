@@ -11,6 +11,7 @@
  */
 #include "cli_cmds.h"
 #include "log.h"
+#include "motor.h"
 #include "version.h"
 #include "control.h"
 #include "can.h"
@@ -301,6 +302,69 @@ static cli_status_t cmd_can(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
+static cli_status_t cmd_motor(cli_t *cli, int argc, char **argv)
+{
+    if ((argc == 3 || argc == 4) && strcmp(argv[1], "pwm") == 0) {
+        /* Duty in percent, -100..100 (sign = direction); the driver takes permille */
+        char *end;
+        long pct = strtol(argv[2], &end, 10);
+        if (*end != '\0' || pct < -100 || pct > 100 || pct == 0) {
+            return CLI_ERR_ARGS;
+        }
+        unsigned long run_ms = 0;   /* 0 = MOTOR_RUN_MS_DEFAULT */
+        if (argc == 4) {
+            run_ms = strtoul(argv[3], &end, 10);
+            if (*end != '\0' || argv[3][0] == '-' || run_ms == 0 || run_ms > MOTOR_RUN_MS_MAX) {
+                return CLI_ERR_ARGS;
+            }
+        }
+        if (!motor_run((int16_t)(pct * 10), (uint32_t)run_ms)) {
+            cli_printf(cli, "motor pwm %ld%% refused (fault latched?)\r\n", pct);
+        } else {
+            cli_printf(cli, "motor pwm %ld%% for %lu ms\r\n", pct,
+                       run_ms ? run_ms : (unsigned long)MOTOR_RUN_MS_DEFAULT);
+        }
+        return CLI_OK;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "zero") == 0) {
+        motor_zero();
+        cli_printf(cli, "motor zeroed\r\n");
+        return CLI_OK;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "clear") == 0) {
+        if (!motor_clear_fault()) {
+            cli_printf(cli, "motor failed to clear faults\r\n");
+        } else {
+            cli_printf(cli, "motor faults cleared\r\n");
+        }
+        return CLI_OK;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "stop") == 0) {
+        motor_stop();
+        cli_printf(cli, "motor stopped.\r\n");
+        return CLI_OK;
+    }
+
+    if (argc != 1) {
+        return CLI_ERR_ARGS;
+    }
+
+    motor_status_t st;
+    motor_get_status(&st);
+    cli_printf(cli, "duty_permille %d\r\n", st.duty_permille);
+    cli_printf(cli, "position %ld\r\n", st.position);
+    cli_printf(cli, "current_ma %d\r\n", st.current_ma);
+    cli_printf(cli, "fault %d\r\n", st.fault);
+    cli_printf(cli, "fault_count %lu\r\n", st.fault_count);
+    cli_printf(cli, "ms_remaining %lu\r\n", st.ms_remaining);
+    cli_printf(cli, "run_active %d\r\n", st.run_active);
+
+    return CLI_OK;
+}
+
 const cli_cmd_t cli_cmds[] = {
     /* Any order works ("?" sorts its output); kept alphabetical to read easily */
     { "can",         "can [test <n>|clear]",               "CAN counters, loopback self-test",   cmd_can         },
@@ -309,6 +373,7 @@ const cli_cmd_t cli_cmds[] = {
     { "jitter",      "jitter [clear]",                     "control tick timing (DWT)",          cmd_jitter      },
     { "led",         "led <1-3> <on|off|blink|fade> [ms]", "LED mode (1 green, 2 amber, 3 red)", cmd_led         },
     { "log_level",   "log_level [error|warn|info|debug]",  "show or set the log level",          cmd_loglevel    },
+    { "motor",       "motor [pwm <pct> [ms]|stop|zero|clear]", "motor status and open-loop runs", cmd_motor   },
     { "msgs",        "msgs",                               "message bus counters",               cmd_msgs        },
     { "reset",       "reset",                              "software reset",                     cmd_reset       },
     { "state",       "state",                              "supervisor state and time in it",    cmd_state       },

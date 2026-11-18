@@ -168,6 +168,14 @@ void task_msg(void *arg)
     }
 }
 
+void event_post(event_id_t event)
+{
+    msg_t m = {
+        .id = event
+    };
+    msg_post(&m, 0);
+}
+
 /* --- Stats --- */
 
 void msg_get_stats(msg_stats_t *out)
