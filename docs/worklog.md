@@ -2,6 +2,23 @@
 
 A rolling log for the project's work.
 
+## 2026-11-17
+Motor bring-up, parts 3 to 6:
+- `motor.c`/`motor.h`: open-loop driver, `motor` CLI (percent duty, 1 s default and 5 s max run deadline), EN/DIAG fault interrupt on EXTI13 that latches until `motor clear`, supervisor FAULT state with a bit per fault source.
+- Encoder sign: positive duty turned the shaft counterclockwise but counted down. Fixed with TIM4 CH1 polarity Falling in CubeMX. Positive = counterclockwise from the shaft end, which matches ROS REP 103 with the motor shaft-up.
+- One output revolution by hand: 751 counts (751.8 expected).
+- Deadband from rest: about +7% and -8% to -10%, varies with gear and commutator position. Plan for a friction feed-forward in the control loop.
+- Full duty, Saleae on ENC A: up to speed in about 0.1 s (time constant roughly 25 ms), then flat at 2,760 counts/s = 220 RPM (rated 223). Supply held 12 V, about 480 mA peak on its display, never current limited.
+- Stop coasted instead of braking: 0.4 s and about 500 counts (240° of output shaft) after the deadline. VNH5019 datasheet section 2.4: a 0 on PWM turns off both low sides, so INA = INB = 0 with PWM low leaves the motor floating. Brake to GND needs PWM held high. Now `bridge_brake()` (INA = INB = 0, CCR1 = ARR + 1) for stops and reversals, `bridge_coast()` (everything off) for faults so a faulted driver doesn't carry braking current.
+- After the fix: stops in about 37 ms and about 30 counts (14°).
+- Captures: `docs/results/2026-11-17-motor-encA-100-3000.csv` (coasting), `docs/results/2026-11-17-motor-encA-100-3000-brake.csv` (braking).
+
+Saved for next time:
+- Part 7: current sense during a run, fault interrupt test with the EN row jumpered to GND, stop latency on the Saleae
+- Correct the motor lab: stop and reversal brake need PWM high
+- Results file for the session in `docs/results/`
+- `motor_tick()` in the control tick (see 2026-11-16)
+
 ## 2026-11-16
 Motor bring-up, part 1 (CubeMX):
 - TIM1 CH1 PWM on PE9: PSC 0, ARR 12999, so 20 kHz from the 260 MHz timer clock with 13,000 duty steps. CH1N off, the VNH5019 does its own bridge timing.
@@ -23,6 +40,7 @@ Saved for next time:
 - Photos and a wiring table for the hub board in `hardware/`
 - Bus-off recovery in the supervisor, rolling counter in protocol frames, FDCAN TX queue in priority order
 - Direct GND wire between the Nucleo side and J17
+- Move `motor_poll()` from the 10 ms supervisor loop into the 1 kHz control tick as `motor_tick()`: encoder extension, fault-line backup and the run deadline (counted in control ticks, since TIM6 at priority 4 can't make FreeRTOS calls). The tick becomes the only writer of the bridge and `position`; tasks post requests (`cmd_pending` set last with `__DMB()`, zero/stop flags) and never touch CCR1/INA/INB. Fault EXTI sets the latch first, then safes the bridge. `motor_current_ma()` stays in task context (ADC polling waits). Update the lab and the stubs to match.
 
 ## 2026-11-15
 - CAN over USB-C: SN65HVD230 board and a USB-C breakout in a printed PETG housing ("CAN" embossed on the lid), and a USB-C cable carrying CAN-H, CAN-L and GND. Files in `hardware/cad/can-sn65hvd230-*`, photos `hardware/photos/can-usb-*`. Print profile on [MakerWorld](https://makerworld.com/en/models/3621895-sn65hvd230-can-enclosure-with-usb-c-panel-port#profileId-4152002). Continuity checked with the plug both ways up (same mapping).
