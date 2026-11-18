@@ -42,8 +42,9 @@ supervisor_state_t supervisor_get_state(void);
 uint32_t supervisor_get_state_ms(void);
 const char *supervisor_state_name(supervisor_state_t s);
 
-/* FAULT -> IDLE. Returns false if not in FAULT.
- * TODO: changes state from the caller's task; move to a message. */
+/* Clears the general error source (EVENT_ERROR) only; the supervisor leaves
+ * FAULT once no sources remain. Returns false if that source wasn't set.
+ * The motor source clears with motor_clear_fault(). Safe from any task. */
 bool supervisor_clear_fault(void);
 
 #ifdef __cplusplus

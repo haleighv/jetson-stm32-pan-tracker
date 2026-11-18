@@ -6,9 +6,10 @@
  * the message bus. Runs every 10 ms.
  *
  * Notes:
- * - FAULT latches. It's only cleared on purpose (CLI clear_fault).
- * - TODO: clear_fault should arrive as a message, so only this task ever
- *   changes the state.
+ * - FAULT latches. Each fault source sets a bit in active_faults, and FAULT
+ *   -> IDLE happens here, in this task, once no bits remain. Sources are
+ *   cleared on purpose: motor clear (motor bit), CLI clear_fault (error bit).
+ * - TODO: clear_fault as a message once CAN can clear faults too.
  *
  * Author: Haleigh (haleighv)
  * Copyright (c) 2026 haleighv
@@ -62,14 +63,16 @@ uint32_t supervisor_get_state_ms(void)
     return xTaskGetTickCount() - xLastStateChangeTime;
 }
 
+/* Drops the general error source (EVENT_ERROR). Called from the CLI task:
+ * the lock keeps the supervisor from setting a bit mid-update. The
+ * supervisor loop leaves FAULT once no sources remain. */
 bool supervisor_clear_fault(void)
 {
-    if (state == SUPERVISOR_FAULT) {
-        LOG_I("clearing fault, returning to IDLE");
-        supervisor_set_state(SUPERVISOR_IDLE);
-        return true;
-    }
-    return false;
+    taskENTER_CRITICAL();
+    bool prior_fault = (supervisor_status.active_faults & SUPERVISOR_ERR_FAULT) != 0U;
+    supervisor_status.active_faults &= ~SUPERVISOR_ERR_FAULT;
+    taskEXIT_CRITICAL();
+    return prior_fault;
 }
 
 const char *supervisor_state_name(supervisor_state_t s)
@@ -185,11 +188,7 @@ void task_supervisor(void *arg)
             case SUPERVISOR_ARMED:
                 break;
             case SUPERVISOR_FAULT:
-                /* Will leave this to CLI for now
-                if (supervisor_status.active_faults & SUPERVISOR_MOTOR_FAULT) {
-                    motor_clear_fault();
-                }
-                */
+                /* Leave FAULT only once every source has cleared */
                 if (!supervisor_status.active_faults) {
                     supervisor_set_state(SUPERVISOR_IDLE);
                 }

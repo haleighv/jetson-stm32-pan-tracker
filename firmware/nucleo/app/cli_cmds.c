@@ -179,9 +179,9 @@ static cli_status_t cmd_clear_fault(cli_t *cli, int argc, char **argv)
     (void)argc;
     (void)argv;
     if (supervisor_clear_fault()) {
-        cli_printf(cli, "fault cleared\r\n");
+        cli_printf(cli, "error fault cleared\r\n");
     } else {
-        cli_printf(cli, "no fault to clear\r\n");
+        cli_printf(cli, "no error fault to clear (motor fault: motor clear)\r\n");
     }
     return CLI_OK;
 }
