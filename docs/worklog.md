@@ -13,8 +13,18 @@ Motor bring-up, parts 3 to 6:
 - After the fix: stops in about 37 ms and about 30 counts (14°).
 - Captures: `docs/results/2026-11-17-motor-encA-100-3000.csv` (coasting), `docs/results/2026-11-17-motor-encA-100-3000-brake.csv` (braking).
 
+Motor bring-up, part 7:
+- Current sense at full duty: `current_ma` read 528-585 mA against 490 mA peak on the supply, 7 mA stopped. Within the VNH5019 sense ratio spread (K0 4,670 to 10,110 at 3 A, about -34% to +42%). Good for relative and stall checks, not absolute current. Single samples move about 60 mA with commutator ripple.
+- Deadline and brake at 50%, Saleae on PWM and ENC A: run 1,001.1 ms for a 1,000 ms request (10 ms `motor_poll`), 50.0% duty, 1,340 counts/s steady (49% of full), 90% speed at about 42 ms, last encoder edge 22 ms after PWM goes high (about 16 counts).
+- Saleae read the PWM at 20.073 and 20.101 kHz in two captures, against 20.000 kHz expected (HSE bypass 8 MHz, PLL1 M 1, N 65, P 1). `tools/clock_drift.py` (CLI uptime vs laptop clock, 5 min) says the board is the one off: +4,306 ppm (+0.43%), drifting about 4,050 to 4,430 ppm over the run. The Saleae is fine, so earlier captures and CAN round-trip times stand. Output in `docs/results/2026-11-17-clock-drift.txt`.
+- Cause: HSE comes from the ST-LINK MCO (UM2407 7.5.1), and the STLINK-V3's default 8 MHz MCO is its STM32F723's HSI / 2, an RC oscillator. ST-LINK firmware V3J7M2 or later can output HSE/3 (8.333 MHz) or HSE/5 (5 MHz) from its 25 MHz crystal instead. Matters for CAN at 1 Mbps: the whole clock error sits on the Nucleo side and moves with temperature.
+- Fault interrupt, EN row jumpered to GND during a 30% run: latched, motor stopped, supervisor IDLE -> FAULT, `motor clear` refused while shorted, cleared after, back to IDLE, runs again.
+- First try counted 164 faults for one short: the jumper bounces and the ISR counted and posted on every falling edge, enough to overflow the log queue. Now the ISR re-safes the bridge on every edge but counts and posts only on the first. Retest: `fault_count` 1.
+- `motor clear` now checks the pin, clears the latch and brakes in one critical section, so idle after a clear is brake (same as after `motor_start()`) and a fault can't land between the check and the brake.
+- Capture: `docs/results/2026-11-17-motor-pwm-encA-50-1000.csv`.
+
 Saved for next time:
-- Part 7: current sense during a run, fault interrupt test with the EN row jumpered to GND, stop latency on the Saleae
+- Fix the clock: ST-LINK firmware upgrade with MCO = HSE/5 (5 MHz), CubeMX HSE input 5 MHz, re-solve PLL1 (520 MHz SYSCLK, 260 MHz TIM1, 130 MHz FDCAN) and PLL2 (96 MHz ADC), rerun `tools/clock_drift.py` (expect under about 50 ppm)
 - Correct the motor lab: stop and reversal brake need PWM high
 - Results file for the session in `docs/results/`
 - `motor_tick()` in the control tick (see 2026-11-16)
