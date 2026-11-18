@@ -1,0 +1,31 @@
+Qty,Refs,Value,Footprint,Notes
+4,C1 C5 C6 C7,100n,C_Disc_D5.0mm_W2.5mm_P5.00mm,
+2,C2 C3,DNP 1n,C_Disc_D5.0mm_W2.5mm_P5.00mm,
+1,C4,10u,CP_Radial_D5.0mm_P2.00mm,
+1,CN7,"Male header 2x10, 2.54 mm (pins down into Zio)",PinHeader_2x10_P2.54mm_Vertical,
+1,CN8,"Male header 2x8, 2.54 mm (pins down into Zio)",PinHeader_2x08_P2.54mm_Vertical,
+1,CN9,"Male header 2x15, 2.54 mm (pins down into Zio)",PinHeader_2x15_P2.54mm_Vertical,
+1,CN10,"Male header 2x17, 2.54 mm (pins down into Zio)",PinHeader_2x17_P2.54mm_Vertical,
+3,D1 D2 D3,1N4148,D_DO-35_SOD27_P7.62mm_Horizontal,
+1,J1,"Male header 1x8, 2.54 mm",PinHeader_1x08_P2.54mm_Vertical,VNH5019 carrier logic: VDD GND INA INB PWM ENA ENB CS
+1,J2,"Male header 1x4, 2.54 mm",PinHeader_1x04_P2.54mm_Vertical,goBILDA 5203 encoder
+1,J3,"Male header 1x4, 2.54 mm",PinHeader_1x04_P2.54mm_Vertical,SN65HVD230 module: VCC GND TX(D) RX(R)
+1,J4,"Male header 1x3, 2.54 mm",PinHeader_1x03_P2.54mm_Vertical,Slot sensor
+1,J5,"Male header 1x3, 2.54 mm",PinHeader_1x03_P2.54mm_Vertical,"End of travel, positive"
+1,J6,"Male header 1x3, 2.54 mm",PinHeader_1x03_P2.54mm_Vertical,"End of travel, negative"
+1,J7,"Male header 1x3, 2.54 mm",PinHeader_1x03_P2.54mm_Vertical,Spare sensor input
+1,J8,"Male header 1x2, 2.54 mm",PinHeader_1x02_P2.54mm_Vertical,NC switch; fit a shunt if no e-stop
+1,J9,"Male header 2x15, 2.54 mm",PinHeader_2x15_P2.54mm_Vertical,Shunt per row: device side (odd) to MCU side (even)
+1,J10,"Male header 1x4, 2.54 mm",PinHeader_1x04_P2.54mm_Vertical,Meter and spare power
+1,J11,"Male header 1x2, 2.54 mm",PinHeader_1x02_P2.54mm_Vertical,"Probe ground, top left"
+1,J12,"Male header 1x2, 2.54 mm",PinHeader_1x02_P2.54mm_Vertical,"Probe ground, top right"
+1,J13,"Male header 1x2, 2.54 mm",PinHeader_1x02_P2.54mm_Vertical,"Probe ground, bottom left"
+1,J14,"Male header 1x2, 2.54 mm",PinHeader_1x02_P2.54mm_Vertical,"Probe ground, bottom right"
+1,JP1,"Male header 1x2, 2.54 mm",PinHeader_1x02_P2.54mm_Vertical,Shunt: END+ cuts EN in hardware; fit a 2.54 mm shunt
+1,JP2,"Male header 1x2, 2.54 mm",PinHeader_1x02_P2.54mm_Vertical,Shunt: END- cuts EN in hardware; fit a 2.54 mm shunt
+1,Q1,2N3904,TO-92_Inline,Pulls EN low: VNH5019 off
+2,R1 R5,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,
+2,R2 R3,100,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,
+1,R4,4k7,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,
+1,R6,10k,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,
+1,R7,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,

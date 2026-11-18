@@ -1,0 +1,11 @@
+# KiCad local history, backups and per-user state
+.history/
+_restore_backup_*/
+*.lck
+*.kicad_prl
+fp-info-cache
+# Freerouting scratch files and DRC exports
+freerouting.*
+temp-freerouting.*
+DRC.json
+DRC.rpt
