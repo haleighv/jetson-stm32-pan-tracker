@@ -23,8 +23,15 @@ Motor bring-up, part 7:
 - `motor clear` now checks the pin, clears the latch and brakes in one critical section, so idle after a clear is brake (same as after `motor_start()`) and a fault can't land between the check and the brake.
 - Capture: `docs/results/2026-11-17-motor-pwm-encA-50-1000.csv`.
 
+Clock fix:
+- ST-LINK firmware upgraded (STLinkUpgrade 3.17.11 from the VS Code STM32 bundles) with MCO = HSE/5: 5 MHz from the ST-LINK's 25 MHz crystal instead of its HSI/2.
+- CubeMX: HSE input 5 MHz (bypass), PLL1 M 1 N 104 P 1 Q 4 (520 MHz SYSCLK, 130 MHz FDCAN), PLL2 M 1 N 96 P 5 (96 MHz ADC). Bus and timer clocks unchanged, `HSE_VALUE` 5000000.
+- `tools/clock_drift.py`: +5 ppm over 300 s, inside the 14 ppm resolution (was +4,306 ppm). Output in `docs/results/2026-11-17-clock-drift-hse5.txt`.
+- `clear_fault` now clears only the general error source, under a critical section; FAULT -> IDLE happens only in the supervisor loop once no sources remain. Before, an `EVENT_ERROR` fault could never clear and `clear_fault` outside FAULT changed state from the CLI task.
+
 Saved for next time:
-- Fix the clock: ST-LINK firmware upgrade with MCO = HSE/5 (5 MHz), CubeMX HSE input 5 MHz, re-solve PLL1 (520 MHz SYSCLK, 260 MHz TIM1, 130 MHz FDCAN) and PLL2 (96 MHz ADC), rerun `tools/clock_drift.py` (expect under about 50 ppm)
+- Rerun the TIM6 jitter captures (idle and loaded) on the crystal clock and compare with the 1.1 µs p99
+- `can test 10000` with the Jetson on the new clock
 - Results file for the session in `docs/results/`
 - `motor_tick()` in the control tick (see 2026-11-16)
 

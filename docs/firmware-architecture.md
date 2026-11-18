@@ -127,7 +127,7 @@ BOOT -> IDLE -> ARMED -> FAULT
 | IDLE | ARMED | TBD (arm command over CAN) |
 | ARMED | IDLE | TBD |
 | any | FAULT | `EVENT_ERROR` on the bus, `EVENT_MOTOR_FAULT` (done); e-stop, heartbeat timeout (<= 50 ms), current limit, control loop stalled, assert/HardFault (planned) |
-| FAULT | IDLE | Each fault source sets a bit; FAULT -> IDLE when no bits are left. `motor clear` clears the motor bit (only once EN/DIAG reads high again). `clear_fault` from the CLI forces IDLE. Latched: never clears on its own. TODO: send `clear_fault` as a message so only the supervisor changes state, and have it clear only its own source. |
+| FAULT | IDLE | Each fault source sets a bit; the supervisor loop goes FAULT -> IDLE when no bits are left. `motor clear` clears the motor bit (only once EN/DIAG reads high again); `clear_fault` from the CLI clears the general error bit. Latched: never clears on its own. TODO: `clear_fault` as a message once CAN can clear faults. |
 
 In FAULT: PWM off, red LED (LD3) via the LED task, fault cause logged and reported over CAN.
 
@@ -142,10 +142,10 @@ In FAULT: PWM off, red LED (LD3) via the LED task, fault cause logged and report
 Read: AN4891 (bus matrix, TCM, where code/data should go), AN4839 (L1 cache), AN4838 (MPU), ES0491 (errata).
 
 ## Clocks and timebase
-- HSE 8 MHz from the ST-LINK (bypass) -> PLL1 -> SYSCLK 520 MHz, VOS0. Same 520 MHz as ST's FreeRTOS example.
-- The board clock is 0.43% fast (+4,306 ppm, `tools/clock_drift.py`, CLI uptime vs the laptop clock over 5 min, 2026-11-17) and wanders a few hundred ppm. The Saleae agreed (PWM at 20.07-20.10 kHz, the tick +2400 to +2900 ppm earlier), so it's the board, not the analyzer.
+- HSE 5 MHz from the ST-LINK MCO (bypass, MCO = HSE/5 from its 25 MHz crystal) -> PLL1 (M 1, N 104, P 1) -> SYSCLK 520 MHz, VOS0. PLL1Q 130 MHz for FDCAN, PLL2P 96 MHz for ADC3.
+- Until 2026-11-17 the board clock was 0.43% fast (+4,306 ppm, `tools/clock_drift.py`, CLI uptime vs the laptop clock over 5 min) and wandered a few hundred ppm. The Saleae agreed (PWM at 20.07-20.10 kHz, the tick +2400 to +2900 ppm earlier), so it was the board, not the analyzer.
 - Cause: the STLINK-V3's default 8 MHz MCO is its STM32F723's HSI / 2, an RC oscillator. Likely also part of the ±1.1 µs Saleae p99 vs ±153 ns from the DWT, since the DWT can't see its own clock wander.
-- Fix (planned): ST-LINK firmware V3J7M2 or later with MCO = HSE/5 (5 MHz from its 25 MHz crystal), HSE input 5 MHz in CubeMX, PLL1/PLL2 re-solved. Then rerun `clock_drift.py` and the jitter capture. Fallback: fit X3 (25 MHz, UM2407).
+- Fixed: ST-LINK firmware with MCO = HSE/5, HSE input 5 MHz in CubeMX. `clock_drift.py` now reads +5 ppm (resolution 14 ppm). Jitter captures still to be rerun on the crystal clock.
 - AHB 260 MHz, APB 130 MHz, APB1 timer clock 260 MHz.
 - FreeRTOS owns SysTick (1 kHz tick). HAL timebase on TIM17.
 - TIM6: PSC 259, ARR 999 -> 1 MHz counter (1 µs per count), 1 kHz update.
