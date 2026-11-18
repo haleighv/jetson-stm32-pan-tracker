@@ -35,11 +35,24 @@ static bool              motor_started = false;
 static volatile bool     fault_latched;  /* set by the EXTI ISR or the poll */
 static volatile uint32_t fault_count;
 
-/* Any context, including the EXTI ISR: no logging, no FreeRTOS calls, no
- * critical section here. Task-side callers wrap it in taskENTER_CRITICAL(). */
-static void bridge_safety_mode(void)
+/* Normal stop: short the motor through both low sides (Table 12, PWM high).
+ * Task context only, inside taskENTER_CRITICAL(). */
+static void bridge_brake(void)
 {
-    TIM1->CCR1 = 0;
+    HAL_GPIO_WritePin(MOTOR_INA_GPIO_Port, MOTOR_INA_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MOTOR_INB_GPIO_Port, MOTOR_INB_Pin, GPIO_PIN_RESET);
+    TIM1->CCR1 = TIM1->ARR + 1;     /* PWM held high: LSA and LSB on */
+    run_active = false;
+    duty = 0;
+}
+
+/* Fault: everything off, the motor coasts. Braking would push current
+ * through the low sides of a driver that just reported a fault.
+ * Any context, including the EXTI ISR: no logging, no FreeRTOS calls, no
+ * critical section here. Task-side callers wrap it in taskENTER_CRITICAL(). */
+static void bridge_coast(void)
+{
+    TIM1->CCR1 = 0;                 /* PWM low: LSA and LSB off */
     HAL_GPIO_WritePin(MOTOR_INA_GPIO_Port, MOTOR_INA_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MOTOR_INB_GPIO_Port, MOTOR_INB_Pin, GPIO_PIN_RESET);
     run_active = false;
@@ -60,7 +73,7 @@ static void motor_fault_isr(void)
 {
     BaseType_t woken = pdFALSE;
     msg_t m = { .id = EVENT_MOTOR_FAULT };
-    bridge_safety_mode();
+    bridge_coast();
     fault_latched = true;
     fault_count++;
     msg_post_from_isr(&m, &woken);
@@ -109,6 +122,10 @@ void motor_start(void)
     HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
     HAL_GPIO_WritePin(MOTOR_EN_GPIO_Port, MOTOR_EN_Pin, GPIO_PIN_SET);
     motor_started = true;
+    /* Start in brake state (the EXTI is live now, so take the lock) */
+    taskENTER_CRITICAL();
+    bridge_brake();
+    taskEXIT_CRITICAL();
     LOG_I("motor started");
 }
 
@@ -125,7 +142,7 @@ bool motor_set(int16_t duty_permille)
      * critical section, since vTaskDelay() can't run with interrupts masked. */
     if (((duty_permille < 0) && (duty > 0)) || ((duty_permille > 0) && (duty < 0))) {
         taskENTER_CRITICAL();
-        bridge_safety_mode();
+        bridge_brake();
         taskEXIT_CRITICAL();
         vTaskDelay(pdMS_TO_TICKS(2));
     }
@@ -179,7 +196,7 @@ bool motor_run(int16_t duty_permille, uint32_t run_ms)
 void motor_stop(void)
 {
     taskENTER_CRITICAL();
-    bridge_safety_mode();
+    bridge_brake();
     taskEXIT_CRITICAL();
     LOG_I("Motor Stop");
 }
@@ -194,13 +211,13 @@ void motor_poll(void)
     taskENTER_CRITICAL();
     motor_position();
     if (fault_live() && !fault_latched) {
-        bridge_safety_mode();
+        bridge_coast();
         fault_latched = true;
         fault_count++;
         new_fault = true;
     }
     if (run_active && (int32_t)(now - run_deadline) >= 0) {
-        bridge_safety_mode();
+        bridge_brake();
         expired = true;
     }
     taskEXIT_CRITICAL();
