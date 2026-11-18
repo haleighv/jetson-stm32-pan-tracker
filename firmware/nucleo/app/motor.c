@@ -74,6 +74,10 @@ static void motor_fault_isr(void)
     BaseType_t woken = pdFALSE;
     msg_t m = { .id = EVENT_MOTOR_FAULT };
     bridge_coast();
+    /* filter additional fault triggers if latched */
+    if (fault_latched) {
+        return;
+    }
     fault_latched = true;
     fault_count++;
     msg_post_from_isr(&m, &woken);
@@ -268,11 +272,21 @@ bool motor_fault(void)
 
 bool motor_clear_fault(void)
 {
+    /* Check, clear and brake under one lock: masks the EXTI (priority 5),
+     * so a fault can't land between the pin check and the brake. Post
+     * after, no FreeRTOS calls in here. */
+    taskENTER_CRITICAL();
     if (!((MOTOR_EN_GPIO_Port->ODR & MOTOR_EN_Pin) && (MOTOR_EN_GPIO_Port->IDR & MOTOR_EN_Pin))) {
+        taskEXIT_CRITICAL();
         return false; /* line still low: keep the latch */
     }
     bool was_latched = fault_latched;
     fault_latched = false;
+    if (was_latched) {
+        bridge_brake();
+    }
+    taskEXIT_CRITICAL();
+
     if (was_latched) {
         event_post(EVENT_MOTOR_FAULT_CLEARED);
     }
