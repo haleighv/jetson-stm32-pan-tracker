@@ -25,7 +25,8 @@ Safety:
 - [x] FDCAN internal loopback: 1M frames, 0 lost, 0 errors
 - [x] CI: host tests + firmware build on every push, elf/map kept per commit
 - [x] CAN bus to the Jetson at 1 Mbps: both directions, 0 errors
-- [ ] Motor, encoder, current sense
+- [x] Motor open loop: VNH5019 driver, encoder, current sense, latched fault interrupt, brake on stop (220 RPM at full duty, stops in ~37 ms)
+- [ ] Motor closed loop: velocity and position
 - [ ] Safety: e-stop, heartbeat, watchdog
 - [ ] ROS 2 tracking pipeline
 - [ ] Measured results

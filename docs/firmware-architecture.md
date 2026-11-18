@@ -12,9 +12,9 @@ STM32H723 (NUCLEO-H723ZG) firmware for the pan axis. Skeleton from [plan.md](pla
 | Function | Peripheral | Pins | Notes |
 |---|---|---|---|
 | Control tick | TIM6 (basic timer), 1 kHz | - | PSC 259, ARR 999 from the 260 MHz APB1 timer clock |
-| Motor PWM | TIM1_CH1, 20 kHz (PSC 0, ARR 12999 from 260 MHz) | PE9 (CN10-4) | Pololu VNH5019 carrier. INA PE11 (CN10-6), INB PE14 (CN10-8), both start low. ENA/ENB tied to PE13 (CN10-10), open drain: low = fault or forced off. Planned |
-| Encoder | TIM4 encoder mode, TI1 and TI2 (x4) | PD12 A (CN10-21), PD13 B (CN10-19) | goBILDA 5203 26.9:1, 751.8 counts/output rev (0.479°/count), 3.3 V. Planned |
-| Motor current | ADC3_INP9 | PF4 (CN10-7) | VNH5019 CS ~140 mV/A, 1 kΩ + 100 nF filter. Only valid while driving. Planned |
+| Motor PWM | TIM1_CH1, 20 kHz (PSC 0, ARR 12999 from 260 MHz) | PE9 (CN10-4) | Pololu VNH5019 carrier. INA PE11 (CN10-6), INB PE14 (CN10-8), both start low. ENA/ENB tied to PE13 (CN10-10), open drain: low = fault or forced off; fault on EXTI13 (falling). Stop and reversal brake to GND: INA = INB = 0 with PWM held high (CCR1 = ARR + 1). Fault coasts: everything off. Open loop working |
+| Encoder | TIM4 encoder mode, TI1 and TI2 (x4) | PD12 A (CN10-21), PD13 B (CN10-19) | goBILDA 5203 26.9:1, 751.8 counts/output rev (0.479°/count), 3.3 V. Input filter 6 on both channels, CH1 polarity Falling so positive duty counts up (positive = counterclockwise from the shaft end, ROS REP 103). Working |
+| Motor current | ADC3_INP9 | PF4 (CN10-7) | VNH5019 CS ~140 mV/A, 1 kΩ + 100 nF filter. Only valid while driving. ADC clock PLL2P 96 MHz / 8, 92.5-cycle sampling. Reads 8-19% high vs the supply at 0.5 A, inside the VNH5019 sense ratio spread: good for relative and stall checks, not absolute current. Working |
 | CAN | FDCAN1, classic 2.0A, 1 Mbps | PD0 (RX), PD1 (TX) | external transceiver. Kernel 130 MHz (PLL1Q), prescaler 5, 26 tq, 80.8% sample point, SJW 5. Normal mode, on the bus with the Jetson (J17) |
 | Telemetry | ETH (RMII) | on-board PHY | |
 | Console/log | USART3, 115200 8N1 | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
@@ -32,8 +32,9 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 |---|---|---|---|---|---|
 | control | TIM6 ISR | 1 kHz | NVIC 4 (above the syscall limit, no FreeRTOS calls) | encoder -> PID -> PWM, current check, push telemetry sample. Today: tick count, DWT period stats, scope pin | supervisor, telemetry (variables, single writer) |
 | estop | EXTI ISR | event | TBD | PWM off, latch fault | supervisor |
+| motor fault | EXTI13 ISR (EN/DIAG low) | event | NVIC 5 | coast the bridge, latch, post `EVENT_MOTOR_FAULT` once per latch (a bouncing line re-safes but doesn't re-count) | supervisor |
 | msg | task (dispatcher) | event | SUMMIT | copy each posted message to its subscribers | everyone (bus) |
-| supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG | all (bus), led |
+| supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG. Today also `motor_poll()` every 10 ms: run deadline, encoder extension, fault-line backup (moving to the control tick) | all (bus), led |
 | host_comms | task | event (CAN RX) + periodic status TX | NORMAL | setpoints + heartbeat from Jetson, status back | supervisor, control |
 | telemetry | task | batches of 1 kHz samples | NORMAL | pack samples, send UDP | control |
 | Tmr Svc | FreeRTOS timer task | event | 2 (same as NORMAL) | runs software timer callbacks (LED blink/fade) | led |
@@ -42,7 +43,7 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 | log | task | event | LOW | only owner of log sinks (UART TX today) | everyone |
 | init | task, runs once | boot | default | create tasks, wait at the sync point, release them, delete itself | - |
 
-Status: init, log, cli, msg, led, supervisor, control tick running. CAN is on the bus with the Jetson (Normal mode); the self-test is driven from the RX ISR (no host_comms task yet). Others are placeholders.
+Status: init, log, cli, msg, led, supervisor, control tick running. Motor runs open loop from the CLI (`motor pwm <pct> [ms]`). CAN is on the bus with the Jetson (Normal mode); the self-test is driven from the RX ISR (no host_comms task yet). Others are placeholders.
 
 ### Task creation
 - One table in `app/task_init.c` (function, name, stack bytes, param, priority, handle, sync). Priorities come from `task_priority_t` in `task_init.h` (LOW/NORMAL/HIGH/SUMMIT).
@@ -107,6 +108,7 @@ Rules:
 | 4 | TIM6 (control tick) | no |
 | TBD (0-4) | e-stop | no |
 | 5 | configMAX_SYSCALL_INTERRUPT_PRIORITY: FreeRTOS critical sections mask 5-15 (BASEPRI) | - |
+| 5 | EXTI15_10 (motor EN/DIAG fault, PE13) | yes (FromISR). Masked by task critical sections, which is what keeps a fault from landing mid-update in `motor_set()`/`motor_clear_fault()` |
 | 6 | USART3 (CLI RX) | yes (FromISR) |
 | 6 | FDCAN1 interrupt 0 (RX FIFO0) | yes (FromISR) |
 | TBD (5+) | ETH | yes (FromISR) |
@@ -124,8 +126,8 @@ BOOT -> IDLE -> ARMED -> FAULT
 | BOOT | IDLE | init done |
 | IDLE | ARMED | TBD (arm command over CAN) |
 | ARMED | IDLE | TBD |
-| any | FAULT | `EVENT_ERROR` on the bus (done); e-stop, heartbeat timeout (<= 50 ms), current limit, control loop stalled, assert/HardFault (planned) |
-| FAULT | IDLE | `clear_fault` from the CLI. Latched: never clears on its own. TODO: send it as a message so only the supervisor changes state. |
+| any | FAULT | `EVENT_ERROR` on the bus, `EVENT_MOTOR_FAULT` (done); e-stop, heartbeat timeout (<= 50 ms), current limit, control loop stalled, assert/HardFault (planned) |
+| FAULT | IDLE | Each fault source sets a bit; FAULT -> IDLE when no bits are left. `motor clear` clears the motor bit (only once EN/DIAG reads high again). `clear_fault` from the CLI forces IDLE. Latched: never clears on its own. TODO: send `clear_fault` as a message so only the supervisor changes state, and have it clear only its own source. |
 
 In FAULT: PWM off, red LED (LD3) via the LED task, fault cause logged and reported over CAN.
 
@@ -141,7 +143,9 @@ Read: AN4891 (bus matrix, TCM, where code/data should go), AN4839 (L1 cache), AN
 
 ## Clocks and timebase
 - HSE 8 MHz from the ST-LINK (bypass) -> PLL1 -> SYSCLK 520 MHz, VOS0. Same 520 MHz as ST's FreeRTOS example.
-- Open question: the Saleae measures the 1 kHz tick +2400 to +2900 ppm fast and varying between captures, with ±1.1 µs p99 spread vs ±153 ns from the DWT. The DWT can't see its own clock source wandering, so the ST-LINK MCO is the suspect. Options if confirmed: fit the board's optional HSE crystal (UM2407), or document the limit.
+- The board clock is 0.43% fast (+4,306 ppm, `tools/clock_drift.py`, CLI uptime vs the laptop clock over 5 min, 2026-11-17) and wanders a few hundred ppm. The Saleae agreed (PWM at 20.07-20.10 kHz, the tick +2400 to +2900 ppm earlier), so it's the board, not the analyzer.
+- Cause: the STLINK-V3's default 8 MHz MCO is its STM32F723's HSI / 2, an RC oscillator. Likely also part of the ±1.1 µs Saleae p99 vs ±153 ns from the DWT, since the DWT can't see its own clock wander.
+- Fix (planned): ST-LINK firmware V3J7M2 or later with MCO = HSE/5 (5 MHz from its 25 MHz crystal), HSE input 5 MHz in CubeMX, PLL1/PLL2 re-solved. Then rerun `clock_drift.py` and the jitter capture. Fallback: fit X3 (25 MHz, UM2407).
 - AHB 260 MHz, APB 130 MHz, APB1 timer clock 260 MHz.
 - FreeRTOS owns SysTick (1 kHz tick). HAL timebase on TIM17.
 - TIM6: PSC 259, ARR 999 -> 1 MHz counter (1 µs per count), 1 kHz update.
