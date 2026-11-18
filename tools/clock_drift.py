@@ -113,8 +113,10 @@ def main():
     print(f"board clock {ppm:+.0f} ppm ({ppm / 1e4:+.3f}%) vs laptop, resolution about {limit:.0f} ppm")
     if abs(ppm) > 1000:
         print("board clock is off: check the HSE source (ST-LINK MCO) and the CAN bit timing margin")
+    elif abs(ppm) > limit:
+        print("board clock is within 0.1% but off by more than the resolution")
     else:
-        print("board clock is fine: a PWM frequency error seen on the Saleae is the analyzer's timebase")
+        print("board clock matches the laptop clock within the resolution")
 
 
 if __name__ == "__main__":
