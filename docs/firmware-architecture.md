@@ -144,8 +144,8 @@ Read: AN4891 (bus matrix, TCM, where code/data should go), AN4839 (L1 cache), AN
 ## Clocks and timebase
 - HSE 5 MHz from the ST-LINK MCO (bypass, MCO = HSE/5 from its 25 MHz crystal) -> PLL1 (M 1, N 104, P 1) -> SYSCLK 520 MHz, VOS0. PLL1Q 130 MHz for FDCAN, PLL2P 96 MHz for ADC3.
 - Until 2026-11-17 the board clock was 0.43% fast (+4,306 ppm, `tools/clock_drift.py`, CLI uptime vs the laptop clock over 5 min) and wandered a few hundred ppm. The Saleae agreed (PWM at 20.07-20.10 kHz, the tick +2400 to +2900 ppm earlier), so it was the board, not the analyzer.
-- Cause: the STLINK-V3's default 8 MHz MCO is its STM32F723's HSI / 2, an RC oscillator. Likely also part of the ±1.1 µs Saleae p99 vs ±153 ns from the DWT, since the DWT can't see its own clock wander.
-- Fixed: ST-LINK firmware with MCO = HSE/5, HSE input 5 MHz in CubeMX. `clock_drift.py` now reads +5 ppm (resolution 14 ppm). Jitter captures still to be rerun on the crystal clock.
+- Cause: the STLINK-V3's default 8 MHz MCO is its STM32F723's HSI / 2, an RC oscillator. It was also the ±1.1 µs Saleae p99 vs ±153 ns from the DWT, since the DWT can't see its own clock wander.
+- Fixed: ST-LINK firmware with MCO = HSE/5, HSE input 5 MHz in CubeMX. `clock_drift.py` now reads +5 ppm (resolution 14 ppm). Saleae jitter rerun on 2026-11-18: +3/+4 ppm, p99 77 ns idle and 34 ns loaded (was 1.1 µs).
 - AHB 260 MHz, APB 130 MHz, APB1 timer clock 260 MHz.
 - FreeRTOS owns SysTick (1 kHz tick). HAL timebase on TIM17.
 - TIM6: PSC 259, ARR 999 -> 1 MHz counter (1 µs per count), 1 kHz update.

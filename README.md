@@ -21,11 +21,12 @@ Safety:
 - [x] STM32 bring-up: 520 MHz, FreeRTOS, task table, queued leveled logging, UART CLI
 - [x] STM32 task framework: pub/sub messaging, startup sync, supervisor skeleton, LED task
 - [x] 1 kHz control tick on TIM6: ±153 ns jitter under load (DWT min/max)
-- [x] Jitter p99 from a Saleae capture: 1.1 µs idle and loaded
+- [x] Jitter p99 from a Saleae capture: 77 ns idle, 34 ns loaded (crystal clock)
 - [x] FDCAN internal loopback: 1M frames, 0 lost, 0 errors
 - [x] CI: host tests + firmware build on every push, elf/map kept per commit
 - [x] CAN bus to the Jetson at 1 Mbps: both directions, 0 errors
 - [x] Motor open loop: VNH5019 driver, encoder, current sense, latched fault interrupt, brake on stop (220 RPM at full duty, stops in ~37 ms)
+- [x] Custom Nucleo shield (Nuc-hatch rev A): designed in KiCad, ordered assembled from JLCPCB
 - [ ] Motor closed loop: velocity and position
 - [ ] Safety: e-stop, heartbeat, watchdog
 - [ ] ROS 2 tracking pipeline
@@ -38,7 +39,7 @@ Coming soon
 | Metric | Target (Day 0 estimate) | Measured |
 |---|---|---|
 | Photon-to-motion latency, p50 / p90 | < 60 / 80 ms | TBD |
-| Control-loop period jitter, p99 | < 2 µs | 1.1 µs (Saleae, 90 s, idle and loaded) |
+| Control-loop period jitter, p99 | < 2 µs | 77 ns idle, 34 ns loaded (Saleae, 90 s) |
 | Step response (30°): rise time / overshoot | < 100 ms / < 10 % | TBD |
 | Heartbeat-loss → motor disabled | ≤ 50 ms | TBD |
 

@@ -47,7 +47,7 @@ A camera mounted to a motor that tracks and centers an AprilTag (pan-only).
 - [x] CI: host tests + cross-compile (GitHub Actions)
 - [x] Nucleo: clocks, UART, blink
 - [x] Nucleo: 1 kHz timer ISR, DWT jitter stats (±153 ns under load)
-- [x] Nucleo: Saleae jitter capture, p99 1.1 µs idle and loaded (`tools/jitter.py`)
+- [x] Nucleo: Saleae jitter capture, p99 77 ns idle and 34 ns loaded on the crystal clock (`tools/jitter.py`; 1.1 µs on the old ST-LINK HSI clock)
 - [x] FDCAN internal loopback: 1M frames, 0 lost, 0 corrupted, 0 errors
 
 ## Results targets
