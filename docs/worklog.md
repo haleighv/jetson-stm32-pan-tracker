@@ -2,6 +2,27 @@
 
 A rolling log for the project's work.
 
+## 2026-11-18
+Nuc-hatch shield, rev A (`hardware/shield/`):
+- Custom shield for the Nucleo to replace the proto-board jumper hub. CAN module socket, VNH5019 and encoder headers, HOME/END+/END-/AUX sensor inputs, an NC e-stop, and a 2x15 breakout with a shunt per signal so any device can be cut off and probed from either side.
+- New pins: HOME PD14 (TIM4 CH3, input capture for homing later), AUX PD15 (TIM4 CH4), END+ PF3, END- PG1, ESTOP PG12.
+- Hardware stop: e-stop open (or a broken wire) and the end sensors (through JP1/JP2) are diode-ORed into a 2N3904 that pulls EN low. The VNH5019 turns off without the firmware, and the firmware sees EN low as the existing motor fault. The stop path sits on the device side of the breakout, so it still works with the shunts pulled.
+- Zio footprint from KiCad's Arduino Uno footprint (the Nucleo's mounting holes are the Uno holes) plus the second Zio row. All 27 used Zio pins checked against UM2407 tables 18-21. Paper print at 1:1 lined up on the Nucleo.
+- 2 layers, all through-hole, GND pour both sides. Routed with Freerouting, cleaned up in KiCad 10. ERC clean, DRC 0 with 7 exclusions (courtyards around the Nucleo mounting holes, as on the Nucleo itself).
+- Silkscreen: NUC-HATCH rev A and a nuthatch pixel-art logo (1-bit, 0.5 mm per pixel).
+- Ordered from JLCPCB: 5 boards, purple, lead-free HASL, assembled both sides (CN7-CN10 on the bottom). $58.77 for boards, parts and assembly, plus UPS DDP shipping, duties and taxes, $143.78 total. Global Standard shipping was about $80 but leaves the duties to be billed at delivery.
+- Assembly needed LCSC part numbers for every line. Through-hole parts are all Extended, and a few weren't stocked: 1N4148 moved to C84410, and the 1x2, 2x15 and 2x17 headers came from other makers (C32713268, C42372523, C19630945). JLCPCB's header 3D models sit 90° off from KiCad's, so the CPL turns every header 270°.
+- Files: Gerber zip, `jlc/` BOM and CPL, LCSC column in `BOM.csv`.
+
+Saved for next time:
+- JLCPCB DFM / placement check in Order History
+- Bring-up when the boards arrive: continuity and shorts check bare, 3V3 and 5V with no Nucleo, then on the Nucleo with every shunt pulled, then one signal at a time
+- Check the HX 2x15 header pin length (not listed) seats in the Zio sockets
+- Firmware for the new inputs: HOME, END+/-, AUX, ESTOP
+- Rerun the TIM6 jitter captures on the crystal clock
+- `can test 10000` with the Jetson on the new clock
+- `motor_tick()` in the control tick
+
 ## 2026-11-17
 Motor bring-up, parts 3 to 6:
 - `motor.c`/`motor.h`: open-loop driver, `motor` CLI (percent duty, 1 s default and 5 s max run deadline), EN/DIAG fault interrupt on EXTI13 that latches until `motor clear`, supervisor FAULT state with a bit per fault source.
