@@ -1,0 +1,19 @@
+Comment,Designator,Footprint,LCSC Part #
+"100nF 50V ceramic disc, 5 mm pitch","C1,C5,C6,C7",C_Disc_D5.0mm_W2.5mm_P5.00mm,C2167231
+"10uF 25V electrolytic, 5 mm dia, 2 mm pitch",C4,CP_Radial_D5.0mm_P2.00mm,C88807
+"Male header 2x10 2.54 mm vertical, 6 mm mating pins, inserted from bottom",CN7,PinHeader_2x10_P2.54mm_Vertical,C124359
+"Male header 2x8 2.54 mm vertical, 6 mm mating pins, inserted from bottom",CN8,PinHeader_2x08_P2.54mm_Vertical,C124389
+"Male header 2x15 2.54 mm vertical, 6 mm mating pins, inserted from bottom",CN9,PinHeader_2x15_P2.54mm_Vertical,C42372523
+"Male header 2x17 2.54 mm vertical, 6 mm mating pins, inserted from bottom",CN10,PinHeader_2x17_P2.54mm_Vertical,C19630945
+1N4148 DO-35,"D1,D2,D3",D_DO-35_SOD27_P7.62mm_Horizontal,C84410
+Male header 1x8 2.54 mm vertical,J1,PinHeader_1x08_P2.54mm_Vertical,C124381
+Male header 1x4 2.54 mm vertical,"J2,J3,J10",PinHeader_1x04_P2.54mm_Vertical,C124378
+Male header 1x3 2.54 mm vertical,"J4,J5,J6,J7",PinHeader_1x03_P2.54mm_Vertical,C124376
+Male header 1x2 2.54 mm vertical,"J8,J11,J12,J13,J14,JP1,JP2",PinHeader_1x02_P2.54mm_Vertical,C32713268
+Male header 2x15 2.54 mm vertical,J9,PinHeader_2x15_P2.54mm_Vertical,C42372523
+2N3904 TO-92,Q1,TO-92_Inline,C118538
+1k 1/4W axial,"R1,R5",R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,C57435
+100R 1/4W axial,"R2,R3",R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,C57438
+4.7k 1/4W axial,R4,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,C57204
+10k 1/4W axial,R6,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,C57436
+100k 1/4W axial,R7,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,C58597

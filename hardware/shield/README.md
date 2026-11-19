@@ -1,8 +1,8 @@
-# Nucleo-H723ZG shield, rev A
+# Nuc-hatch: Nucleo-H723ZG shield, rev A
 
 A shield for the NUCLEO-H723ZG that replaces the hand-soldered jumper hub: CAN module socket, VNH5019 and encoder headers, sensor and end-of-travel inputs, an e-stop with a hardware path to the driver's EN line, and a breakout header that can cut and probe every signal. All through-hole, 2.54 mm headers, 2 layers.
 
-Status: routed (Freerouting, then cleaned up in KiCad 10). ERC clean. DRC clean, with three courtyard overlaps excluded (Nucleo mounting holes next to the Zio rows, as on the Nucleo itself). Not ordered or tested yet.
+Status: routed (Freerouting, then cleaned up in KiCad 10). ERC clean. DRC clean, with three courtyard overlaps excluded (Nucleo mounting holes next to the Zio rows, as on the Nucleo itself). Ordered 2026-11-18 from JLCPCB: 5 boards, fully assembled (top and bottom). Not tested yet.
 
 ## Files
 
@@ -15,7 +15,10 @@ Status: routed (Freerouting, then cleaned up in KiCad 10). ERC clean. DRC clean,
 | `nucleo-shield-top.png`, `nucleo-shield-bottom.png` | KiCad 3D renders of the routed board. |
 | `schematic.pdf` | Schematic. |
 | `fit-check-1to1.pdf` | Copper, silkscreen and outline at 1:1, for the paper fit check. |
-| `BOM.csv` | Parts list. |
+| `art/nuc-hatch-silk.png`, `art/nuc-hatch-pixel-art.png` | Nuthatch logo: 1-bit silkscreen image (0.5 mm per pixel, 24.5 x 11 mm) and the colour pixel art it came from. |
+| `BOM.csv` | Parts list, with the LCSC part numbers used for the JLCPCB assembly. |
+| `nucleo-shield-revA-gerbers.zip` | Gerbers and drill files as ordered (KiCad 10 plot, Protel extensions). |
+| `jlc/nucleo-shield-revA-bom-jlc.csv`, `jlc/nucleo-shield-revA-cpl-jlc.csv` | JLCPCB assembly BOM and placement. CN7-CN10 are bottom side; C2 and C3 are not fitted. |
 
 Once the board is routed in KiCad, the KiCad files are the source; the generators are for rev A only.
 

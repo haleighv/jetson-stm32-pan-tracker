@@ -11461,6 +11461,606 @@
 			)
 		)
 	)
+	(footprint "LOGO"
+		(layer "F.Cu")
+		(uuid "f1ca379a-3e75-494d-b31c-387c39aab50b")
+		(at 91 107)
+		(property "Reference" "G***"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "52705f41-6b09-46d9-bfe2-a725e0dda71b")
+			(effects
+				(font
+					(size 1.5 1.5)
+					(thickness 0.3)
+				)
+			)
+		)
+		(property "Value" "LOGO"
+			(at 0.75 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "a79c560f-6dae-45da-aee3-05c15a9fcbea")
+			(effects
+				(font
+					(size 1.5 1.5)
+					(thickness 0.3)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "650e120f-abfa-4cb3-9094-271e7482c48f")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "a4c7f0a1-6f46-41fc-bcc4-7de08463d204")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(attr board_only exclude_from_pos_files exclude_from_bom)
+		(duplicate_pad_numbers_are_jumpers no)
+		(fp_poly
+			(pts
+				(xy -9.75 -1.75) (xy -9.75 -1.5) (xy -10 -1.5) (xy -10.25 -1.5) (xy -10.25 -1.75) (xy -10.25 -2)
+				(xy -10 -2) (xy -9.75 -2)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "0d751157-82e7-4a2f-bfc1-aca0d780e858")
+		)
+		(fp_poly
+			(pts
+				(xy -8.75 -1.25) (xy -8.75 -1) (xy -9.25 -1) (xy -9.75 -1) (xy -9.75 -1.25) (xy -9.75 -1.5) (xy -9.25 -1.5)
+				(xy -8.75 -1.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "eb0a5dfd-c56c-40af-87a8-f649464189f0")
+		)
+		(fp_poly
+			(pts
+				(xy -8.25 -0.75) (xy -8.25 -0.5) (xy -8.5 -0.5) (xy -8.75 -0.5) (xy -8.75 -0.75) (xy -8.75 -1) (xy -8.5 -1)
+				(xy -8.25 -1)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "67de8b52-1ad9-4038-ad5f-df7faf236c1a")
+		)
+		(fp_poly
+			(pts
+				(xy -7.25 -0.25) (xy -7.25 0) (xy -7.75 0) (xy -8.25 0) (xy -8.25 -0.25) (xy -8.25 -0.5) (xy -7.75 -0.5)
+				(xy -7.25 -0.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "c9dabe4b-d51a-4a01-ad08-87c6a3664b38")
+		)
+		(fp_poly
+			(pts
+				(xy -6.75 0.25) (xy -6.75 0.5) (xy -7 0.5) (xy -7.25 0.5) (xy -7.25 0.25) (xy -7.25 0) (xy -7 0)
+				(xy -6.75 0)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "3b467f5c-1c72-469f-b3df-00e0ce24bc14")
+		)
+		(fp_poly
+			(pts
+				(xy -6.25 0.75) (xy -6.25 1) (xy -6.5 1) (xy -6.75 1) (xy -6.75 0.75) (xy -6.75 0.5) (xy -6.5 0.5)
+				(xy -6.25 0.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "636eecbd-6058-4c46-8f96-1ddd4ffa8be1")
+		)
+		(fp_poly
+			(pts
+				(xy -2.75 -2.25) (xy -2.75 -2) (xy -3 -2) (xy -3.25 -2) (xy -3.25 -2.25) (xy -3.25 -2.5) (xy -3 -2.5)
+				(xy -2.75 -2.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "f1e659da-78bc-4f78-8fdc-be3a773bc327")
+		)
+		(fp_poly
+			(pts
+				(xy -2.75 -1.25) (xy -2.75 -1) (xy -3 -1) (xy -3.25 -1) (xy -3.25 -1.25) (xy -3.25 -1.5) (xy -3 -1.5)
+				(xy -2.75 -1.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "3c955de6-0977-4c91-b096-772a65124004")
+		)
+		(fp_poly
+			(pts
+				(xy -2.75 -0.25) (xy -2.75 0) (xy -3 0) (xy -3.25 0) (xy -3.25 -0.25) (xy -3.25 -0.5) (xy -3 -0.5)
+				(xy -2.75 -0.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "c969dd07-75cf-4b94-aabc-e2a2e8834e3a")
+		)
+		(fp_poly
+			(pts
+				(xy -2.75 1.75) (xy -2.75 2) (xy -3 2) (xy -3.25 2) (xy -3.25 1.75) (xy -3.25 1.5) (xy -3 1.5) (xy -2.75 1.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "2a928380-2d12-462e-b437-82f5e8a407f3")
+		)
+		(fp_poly
+			(pts
+				(xy -2.25 2.25) (xy -2.25 2.5) (xy -2.5 2.5) (xy -2.75 2.5) (xy -2.75 2.25) (xy -2.75 2) (xy -2.5 2)
+				(xy -2.25 2)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "9d1439f4-a81d-4313-ab70-3e2efd9bdefe")
+		)
+		(fp_poly
+			(pts
+				(xy -1.25 0.25) (xy -1.25 0.5) (xy -1.5 0.5) (xy -1.75 0.5) (xy -1.75 0.25) (xy -1.75 0) (xy -1.5 0)
+				(xy -1.25 0)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "1e5adcb9-2182-40f5-a7af-68013fd98aa8")
+		)
+		(fp_poly
+			(pts
+				(xy -0.75 -2.25) (xy -0.75 -2) (xy -1 -2) (xy -1.25 -2) (xy -1.25 -2.25) (xy -1.25 -2.5) (xy -1 -2.5)
+				(xy -0.75 -2.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "aeee39e1-7bed-4491-97f0-ee703e0eb5b9")
+		)
+		(fp_poly
+			(pts
+				(xy -0.75 2.75) (xy -0.75 3) (xy -1 3) (xy -1.25 3) (xy -1.25 2.75) (xy -1.25 2.5) (xy -1 2.5) (xy -0.75 2.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "ca9992c8-2a0b-4ac8-8bd0-867583949c28")
+		)
+		(fp_poly
+			(pts
+				(xy -0.25 -2.75) (xy -0.25 -2.5) (xy -0.5 -2.5) (xy -0.75 -2.5) (xy -0.75 -2.75) (xy -0.75 -3) (xy -0.5 -3)
+				(xy -0.25 -3)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "3bcab037-8337-470a-83a7-cb3081abcb9d")
+		)
+		(fp_poly
+			(pts
+				(xy 0.25 -2.25) (xy 0.25 -2) (xy 0 -2) (xy -0.25 -2) (xy -0.25 -2.25) (xy -0.25 -2.5) (xy 0 -2.5)
+				(xy 0.25 -2.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "61b0ddb8-c38d-4b4f-a063-2c85a47f4b3c")
+		)
+		(fp_poly
+			(pts
+				(xy 0.25 2.75) (xy 0.25 3) (xy 0 3) (xy -0.25 3) (xy -0.25 2.75) (xy -0.25 2.5) (xy 0 2.5) (xy 0.25 2.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "fdda911a-79fb-4b3b-a1ed-28c349a7c1bb")
+		)
+		(fp_poly
+			(pts
+				(xy 0.75 -1.75) (xy 0.75 -1.5) (xy 0.5 -1.5) (xy 0.25 -1.5) (xy 0.25 -1.75) (xy 0.25 -2) (xy 0.5 -2)
+				(xy 0.75 -2)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "087f0521-0b34-40e3-8963-8d099640c769")
+		)
+		(fp_poly
+			(pts
+				(xy 1.25 -1.25) (xy 1.25 -1) (xy 1 -1) (xy 0.75 -1) (xy 0.75 -1.25) (xy 0.75 -1.5) (xy 1 -1.5) (xy 1.25 -1.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "99ff059d-ec76-43e6-898d-a1d0cbb20a97")
+		)
+		(fp_poly
+			(pts
+				(xy 1.75 -0.75) (xy 1.75 -0.5) (xy 1.5 -0.5) (xy 1.25 -0.5) (xy 1.25 -0.75) (xy 1.25 -1) (xy 1.5 -1)
+				(xy 1.75 -1)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "149154ab-d4f8-4269-bd3f-5dc5bcbddf19")
+		)
+		(fp_poly
+			(pts
+				(xy 1.75 0.25) (xy 1.75 0.5) (xy 1.5 0.5) (xy 1.25 0.5) (xy 1.25 0.25) (xy 1.25 0) (xy 1.5 0) (xy 1.75 0)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "5ab24eb4-55b1-4f9c-aaab-a90e7f373a26")
+		)
+		(fp_poly
+			(pts
+				(xy 2.25 -0.25) (xy 2.25 0) (xy 2 0) (xy 1.75 0) (xy 1.75 -0.25) (xy 1.75 -0.5) (xy 2 -0.5) (xy 2.25 -0.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "221ab210-8f3d-4b8b-a80a-eb419113aec4")
+		)
+		(fp_poly
+			(pts
+				(xy 2.25 0.75) (xy 2.25 1) (xy 2 1) (xy 1.75 1) (xy 1.75 0.75) (xy 1.75 0.5) (xy 2 0.5) (xy 2.25 0.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "5941343c-803c-4bed-bd55-7248a51165ba")
+		)
+		(fp_poly
+			(pts
+				(xy 2.75 0.25) (xy 2.75 0.5) (xy 2.5 0.5) (xy 2.25 0.5) (xy 2.25 0.25) (xy 2.25 0) (xy 2.5 0) (xy 2.75 0)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "fe4e349d-be98-4ba7-9fde-cf691001fd18")
+		)
+		(fp_poly
+			(pts
+				(xy 7.75 -4.75) (xy 7.75 -4.5) (xy 7.25 -4.5) (xy 6.75 -4.5) (xy 6.75 -4.75) (xy 6.75 -5) (xy 7.25 -5)
+				(xy 7.75 -5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "24a79fba-8510-44a3-8094-7250a7c0cd49")
+		)
+		(fp_poly
+			(pts
+				(xy 8.25 -4.25) (xy 8.25 -4) (xy 8 -4) (xy 7.75 -4) (xy 7.75 -4.25) (xy 7.75 -4.5) (xy 8 -4.5) (xy 8.25 -4.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "a2b4f4cd-0e80-4bc3-84e5-b36182b143da")
+		)
+		(fp_poly
+			(pts
+				(xy 8.75 -3.75) (xy 8.75 -3.5) (xy 8.5 -3.5) (xy 8.25 -3.5) (xy 8.25 -3.75) (xy 8.25 -4) (xy 8.5 -4)
+				(xy 8.75 -4)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "8037af9b-431a-4cd9-8a8e-add1233c7920")
+		)
+		(fp_poly
+			(pts
+				(xy 9.25 -3.25) (xy 9.25 -3) (xy 9 -3) (xy 8.75 -3) (xy 8.75 -3.25) (xy 8.75 -3.5) (xy 9 -3.5) (xy 9.25 -3.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "d508b1dc-fcc2-459e-87d3-3a8c1fcf7bf7")
+		)
+		(fp_poly
+			(pts
+				(xy 9.75 -2.5) (xy 9.75 -2) (xy 9.5 -2) (xy 9.25 -2) (xy 9.25 -2.5) (xy 9.25 -3) (xy 9.5 -3) (xy 9.75 -3)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "53c91106-4847-4d27-bcc0-f95827695496")
+		)
+		(fp_poly
+			(pts
+				(xy 10.75 -1.75) (xy 10.75 -1.5) (xy 10.25 -1.5) (xy 9.75 -1.5) (xy 9.75 -1.75) (xy 9.75 -2) (xy 10.25 -2)
+				(xy 10.75 -2)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "ff5b00f3-e98a-43eb-b3c1-2843f2ea472c")
+		)
+		(fp_poly
+			(pts
+				(xy -1.25 -1.75) (xy -1.25 -1.5) (xy -1.5 -1.5) (xy -1.75 -1.5) (xy -1.75 -1.25) (xy -1.75 -1) (xy -2 -1)
+				(xy -2.25 -1) (xy -2.25 -1.25) (xy -2.25 -1.5) (xy -2 -1.5) (xy -1.75 -1.5) (xy -1.75 -1.75) (xy -1.75 -2)
+				(xy -1.5 -2) (xy -1.25 -2)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "a8b071d4-4455-43c2-bdf3-060048f52828")
+		)
+		(fp_poly
+			(pts
+				(xy -1.25 -0.75) (xy -1.25 -0.5) (xy -1.5 -0.5) (xy -1.75 -0.5) (xy -1.75 -0.25) (xy -1.75 0) (xy -2 0)
+				(xy -2.25 0) (xy -2.25 -0.25) (xy -2.25 -0.5) (xy -2 -0.5) (xy -1.75 -0.5) (xy -1.75 -0.75) (xy -1.75 -1)
+				(xy -1.5 -1) (xy -1.25 -1)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "8434407b-e199-446e-8081-ae5a2dc0bdc1")
+		)
+		(fp_poly
+			(pts
+				(xy -0.75 -3.25) (xy -0.75 -3) (xy -1 -3) (xy -1.25 -3) (xy -1.25 -2.75) (xy -1.25 -2.5) (xy -1.5 -2.5)
+				(xy -1.75 -2.5) (xy -1.75 -2.25) (xy -1.75 -2) (xy -2 -2) (xy -2.25 -2) (xy -2.25 -2.25) (xy -2.25 -2.5)
+				(xy -2 -2.5) (xy -1.75 -2.5) (xy -1.75 -2.75) (xy -1.75 -3) (xy -1.5 -3) (xy -1.25 -3) (xy -1.25 -3.25)
+				(xy -1.25 -3.5) (xy -1 -3.5) (xy -0.75 -3.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "acb5d389-5439-4cdc-bb3b-913de11e2ed5")
+		)
+		(fp_poly
+			(pts
+				(xy -0.75 0.75) (xy -0.75 1) (xy -0.5 1) (xy -0.25 1) (xy -0.25 0.75) (xy -0.25 0.5) (xy 0 0.5)
+				(xy 0.25 0.5) (xy 0.25 0.75) (xy 0.25 1) (xy 0.5 1) (xy 0.75 1) (xy 0.75 0.75) (xy 0.75 0.5) (xy 1 0.5)
+				(xy 1.25 0.5) (xy 1.25 0.75) (xy 1.25 1) (xy 1 1) (xy 0.75 1) (xy 0.75 1.25) (xy 0.75 1.5) (xy 0.5 1.5)
+				(xy 0.25 1.5) (xy 0.25 1.25) (xy 0.25 1) (xy 0 1) (xy -0.25 1) (xy -0.25 1.25) (xy -0.25 1.5) (xy -0.5 1.5)
+				(xy -0.75 1.5) (xy -0.75 1.25) (xy -0.75 1) (xy -1 1) (xy -1.25 1) (xy -1.25 1.25) (xy -1.25 1.5)
+				(xy -1.5 1.5) (xy -1.75 1.5) (xy -1.75 1.25) (xy -1.75 1) (xy -1.5 1) (xy -1.25 1) (xy -1.25 0.75)
+				(xy -1.25 0.5) (xy -1 0.5) (xy -0.75 0.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "bdf39908-aa10-4d33-ab2a-1a5a8030cd8e")
+		)
+		(fp_poly
+			(pts
+				(xy 3.25 0.75) (xy 3.25 1) (xy 3.5 1) (xy 3.75 1) (xy 3.75 0.75) (xy 3.75 0.5) (xy 4 0.5) (xy 4.25 0.5)
+				(xy 4.25 0.75) (xy 4.25 1) (xy 4 1) (xy 3.75 1) (xy 3.75 1.25) (xy 3.75 1.5) (xy 3.5 1.5) (xy 3.25 1.5)
+				(xy 3.25 1.25) (xy 3.25 1) (xy 3 1) (xy 2.75 1) (xy 2.75 1.25) (xy 2.75 1.5) (xy 2.5 1.5) (xy 2.25 1.5)
+				(xy 2.25 1.75) (xy 2.25 2) (xy 2 2) (xy 1.75 2) (xy 1.75 1.75) (xy 1.75 1.5) (xy 1.5 1.5) (xy 1.25 1.5)
+				(xy 1.25 1.25) (xy 1.25 1) (xy 1.5 1) (xy 1.75 1) (xy 1.75 1.25) (xy 1.75 1.5) (xy 2 1.5) (xy 2.25 1.5)
+				(xy 2.25 1.25) (xy 2.25 1) (xy 2.5 1) (xy 2.75 1) (xy 2.75 0.75) (xy 2.75 0.5) (xy 3 0.5) (xy 3.25 0.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "ce704c58-ccb2-4f06-939a-c07f8206467c")
+		)
+		(fp_poly
+			(pts
+				(xy -0.25 -1.75) (xy -0.25 -1.5) (xy -0.5 -1.5) (xy -0.75 -1.5) (xy -0.75 -1.25) (xy -0.75 -1) (xy -0.5 -1)
+				(xy -0.25 -1) (xy -0.25 -1.25) (xy -0.25 -1.5) (xy 0 -1.5) (xy 0.25 -1.5) (xy 0.25 -1.25) (xy 0.25 -1)
+				(xy 0 -1) (xy -0.25 -1) (xy -0.25 -0.75) (xy -0.25 -0.5) (xy -0.5 -0.5) (xy -0.75 -0.5) (xy -0.75 -0.25)
+				(xy -0.75 0) (xy -0.5 0) (xy -0.25 0) (xy -0.25 -0.25) (xy -0.25 -0.5) (xy 0 -0.5) (xy 0.25 -0.5)
+				(xy 0.25 -0.75) (xy 0.25 -1) (xy 0.5 -1) (xy 0.75 -1) (xy 0.75 -0.75) (xy 0.75 -0.5) (xy 0.5 -0.5)
+				(xy 0.25 -0.5) (xy 0.25 -0.25) (xy 0.25 0) (xy 0.5 0) (xy 0.75 0) (xy 0.75 -0.25) (xy 0.75 -0.5)
+				(xy 1 -0.5) (xy 1.25 -0.5) (xy 1.25 -0.25) (xy 1.25 0) (xy 1 0) (xy 0.75 0) (xy 0.75 0.25) (xy 0.75 0.5)
+				(xy 0.5 0.5) (xy 0.25 0.5) (xy 0.25 0.25) (xy 0.25 0) (xy 0 0) (xy -0.25 0) (xy -0.25 0.25) (xy -0.25 0.5)
+				(xy -0.5 0.5) (xy -0.75 0.5) (xy -0.75 0.25) (xy -0.75 0) (xy -1 0) (xy -1.25 0) (xy -1.25 -0.25)
+				(xy -1.25 -0.5) (xy -1 -0.5) (xy -0.75 -0.5) (xy -0.75 -0.75) (xy -0.75 -1) (xy -1 -1) (xy -1.25 -1)
+				(xy -1.25 -1.25) (xy -1.25 -1.5) (xy -1 -1.5) (xy -0.75 -1.5) (xy -0.75 -1.75) (xy -0.75 -2) (xy -0.5 -2)
+				(xy -0.25 -2)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "93720972-3b19-447c-9b0f-136cc53c604b")
+		)
+		(fp_poly
+			(pts
+				(xy 6.75 -5.25) (xy 6.75 -5) (xy 5.25 -5) (xy 3.75 -5) (xy 3.75 -4.75) (xy 3.75 -4.5) (xy 3 -4.5)
+				(xy 2.25 -4.5) (xy 2.25 -4.25) (xy 2.25 -4) (xy 1.5 -4) (xy 0.75 -4) (xy 0.75 -3.75) (xy 0.75 -3.5)
+				(xy 0.5 -3.5) (xy 0.25 -3.5) (xy 0.25 -3.25) (xy 0.25 -3) (xy 0 -3) (xy -0.25 -3) (xy -0.25 -3.25)
+				(xy -0.25 -3.5) (xy -0.5 -3.5) (xy -0.75 -3.5) (xy -0.75 -3.75) (xy -0.75 -4) (xy -1.75 -4) (xy -2.75 -4)
+				(xy -2.75 -3.75) (xy -2.75 -3.5) (xy -5.75 -3.5) (xy -8.75 -3.5) (xy -8.75 -3.25) (xy -8.75 -3)
+				(xy -9.75 -3) (xy -10.75 -3) (xy -10.75 -2.75) (xy -10.75 -2.5) (xy -10.5 -2.5) (xy -10.25 -2.5)
+				(xy -10.25 -2.25) (xy -10.25 -2) (xy -10.75 -2) (xy -11.25 -2) (xy -11.25 -1.75) (xy -11.25 -1.5)
+				(xy -11.75 -1.5) (xy -12.25 -1.5) (xy -12.25 -1.75) (xy -12.25 -2) (xy -12 -2) (xy -11.75 -2) (xy -11.75 -2.25)
+				(xy -11.75 -2.5) (xy -11.5 -2.5) (xy -11.25 -2.5) (xy -11.25 -2.75) (xy -11.25 -3) (xy -11.75 -3)
+				(xy -12.25 -3) (xy -12.25 -3.25) (xy -12.25 -3.5) (xy -10.5 -3.5) (xy -8.75 -3.5) (xy -8.75 -3.75)
+				(xy -8.75 -4) (xy -5.75 -4) (xy -2.75 -4) (xy -2.75 -4.25) (xy -2.75 -4.5) (xy -1.75 -4.5) (xy -0.75 -4.5)
+				(xy -0.75 -4.25) (xy -0.75 -4) (xy 0 -4) (xy 0.75 -4) (xy 0.75 -4.25) (xy 0.75 -4.5) (xy 1.5 -4.5)
+				(xy 2.25 -4.5) (xy 2.25 -4.75) (xy 2.25 -5) (xy 3 -5) (xy 3.75 -5) (xy 3.75 -5.25) (xy 3.75 -5.5)
+				(xy 5.25 -5.5) (xy 6.75 -5.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "c1b0fc3e-513e-44ad-83ba-0844d6bfae77")
+		)
+		(fp_poly
+			(pts
+				(xy 7.25 -3.25) (xy 7.25 -3) (xy 7.5 -3) (xy 7.75 -3) (xy 7.75 -2.75) (xy 7.75 -2.5) (xy 8 -2.5)
+				(xy 8.25 -2.5) (xy 8.25 -2.25) (xy 8.25 -2) (xy 8.5 -2) (xy 8.75 -2) (xy 8.75 -1.5) (xy 8.75 -1)
+				(xy 9.75 -1) (xy 10.75 -1) (xy 10.75 -1.25) (xy 10.75 -1.5) (xy 11.5 -1.5) (xy 12.25 -1.5) (xy 12.25 -1.25)
+				(xy 12.25 -1) (xy 11.5 -1) (xy 10.75 -1) (xy 10.75 -0.75) (xy 10.75 -0.5) (xy 9.75 -0.5) (xy 8.75 -0.5)
+				(xy 8.75 -0.25) (xy 8.75 0) (xy 8.5 0) (xy 8.25 0) (xy 8.25 0.25) (xy 8.25 0.5) (xy 8 0.5) (xy 7.75 0.5)
+				(xy 7.75 0.75) (xy 7.75 1) (xy 7.5 1) (xy 7.25 1) (xy 7.25 1.25) (xy 7.25 1.5) (xy 7 1.5) (xy 6.75 1.5)
+				(xy 6.75 2) (xy 6.75 2.5) (xy 6.5 2.5) (xy 6.25 2.5) (xy 6.25 3) (xy 6.25 3.5) (xy 6 3.5) (xy 5.75 3.5)
+				(xy 5.75 3.75) (xy 5.75 4) (xy 5.5 4) (xy 5.25 4) (xy 5.25 4.25) (xy 5.25 4.5) (xy 5 4.5) (xy 4.75 4.5)
+				(xy 4.75 4.75) (xy 4.75 5) (xy 4.25 5) (xy 3.75 5) (xy 3.75 5.25) (xy 3.75 5.5) (xy 1.5 5.5) (xy -0.75 5.5)
+				(xy -0.75 5.25) (xy -0.75 5) (xy -2 5) (xy -3.25 5) (xy -3.25 4.75) (xy -3.25 4.5) (xy -3.5 4.5)
+				(xy -3.75 4.5) (xy -3.75 4.25) (xy -3.75 4) (xy -4 4) (xy -4.25 4) (xy -4.25 3.75) (xy -4.25 3.5)
+				(xy -4.5 3.5) (xy -4.75 3.5) (xy -4.75 3.25) (xy -4.75 3) (xy -5 3) (xy -5.25 3) (xy -5.25 2.75)
+				(xy -5.25 2.5) (xy -5.5 2.5) (xy -5.75 2.5) (xy -5.75 2.25) (xy -5.75 2) (xy -6 2) (xy -6.25 2)
+				(xy -6.25 1.5) (xy -6.25 1) (xy -6 1) (xy -5.75 1) (xy -5.75 1.25) (xy -5.75 1.5) (xy -5.25 1.5)
+				(xy -4.75 1.5) (xy -4.75 1.75) (xy -4.75 2) (xy -4.25 2) (xy -3.75 2) (xy -3.75 2.25) (xy -3.75 2.5)
+				(xy -3.5 2.5) (xy -3.25 2.5) (xy -3.25 2.75) (xy -3.25 3) (xy -2.75 3) (xy -2.25 3) (xy -2.25 3.25)
+				(xy -2.25 3.5) (xy -1 3.5) (xy 0.25 3.5) (xy 0.25 3.25) (xy 0.25 3) (xy 0.5 3) (xy 0.75 3) (xy 0.75 3.25)
+				(xy 0.75 3.5) (xy 1.25 3.5) (xy 1.75 3.5) (xy 1.75 3.25) (xy 1.75 3) (xy 2.25 3) (xy 2.75 3) (xy 2.75 2.75)
+				(xy 2.75 2.5) (xy 2.5 2.5) (xy 2.25 2.5) (xy 2.25 2.25) (xy 2.25 2) (xy 2.5 2) (xy 2.75 2) (xy 2.75 1.75)
+				(xy 2.75 1.5) (xy 3 1.5) (xy 3.25 1.5) (xy 3.25 1.75) (xy 3.25 2) (xy 3.5 2) (xy 3.75 2) (xy 3.75 1.75)
+				(xy 3.75 1.5) (xy 4 1.5) (xy 4.25 1.5) (xy 4.25 1.25) (xy 4.25 1) (xy 4.5 1) (xy 4.75 1) (xy 4.75 0.75)
+				(xy 4.75 0.5) (xy 4.5 0.5) (xy 4.25 0.5) (xy 4.25 0.25) (xy 4.25 0) (xy 3.75 0) (xy 3.25 0) (xy 3.25 -0.5)
+				(xy 3.25 -1) (xy 3 -1) (xy 2.75 -1) (xy 2.75 -1.25) (xy 2.75 -1.5) (xy 3 -1.5) (xy 3.25 -1.5) (xy 3.25 -1.75)
+				(xy 3.25 -2) (xy 3 -2) (xy 2.75 -2) (xy 2.75 -2.25) (xy 4.25 -2.25) (xy 4.25 -2) (xy 4.75 -2) (xy 5.25 -2)
+				(xy 5.75 -2) (xy 5.75 -1.75) (xy 5.75 -1.5) (xy 6.25 -1.5) (xy 6.75 -1.5) (xy 6.75 -2) (xy 6.75 -2.5)
+				(xy 6.5 -2.5) (xy 6.25 -2.5) (xy 6.25 -2.25) (xy 6.25 -2) (xy 6 -2) (xy 5.75 -2) (xy 5.25 -2) (xy 5.25 -2.25)
+				(xy 5.25 -2.5) (xy 4.75 -2.5) (xy 4.25 -2.5) (xy 4.25 -2.25) (xy 2.75 -2.25) (xy 2.75 -2.5) (xy 3 -2.5)
+				(xy 3.25 -2.5) (xy 3.25 -2.75) (xy 3.75 -2.75) (xy 3.75 -2.5) (xy 4 -2.5) (xy 4.25 -2.5) (xy 4.25 -2.75)
+				(xy 4.25 -3) (xy 4 -3) (xy 3.75 -3) (xy 3.75 -2.75) (xy 3.25 -2.75) (xy 3.25 -3) (xy 3.5 -3) (xy 3.75 -3)
+				(xy 3.75 -3.25) (xy 3.75 -3.5) (xy 5.5 -3.5) (xy 7.25 -3.5)
+			)
+			(stroke
+				(width 0)
+				(type solid)
+			)
+			(fill yes)
+			(layer "F.SilkS")
+			(uuid "eae76212-fe03-4d70-85a2-adb9cd97e5ae")
+		)
+		(embedded_fonts no)
+	)
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "f432ac01-a373-40b4-b7cf-5e37ca1f5702")
@@ -12723,8 +13323,8 @@
 			)
 		)
 	)
-	(gr_text "NUCLEO-H723ZG SHIELD rev A"
-		(at 84.5 106 0)
+	(gr_text "NUC-HATCH rev A"
+		(at 75.5 108 0)
 		(layer "F.SilkS")
 		(uuid "7517bdaf-d764-4cc1-9f79-3dd13b64b403")
 		(effects
