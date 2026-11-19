@@ -14,12 +14,23 @@ Nuc-hatch shield, rev A (`hardware/shield/`):
 - Assembly needed LCSC part numbers for every line. Through-hole parts are all Extended, and a few weren't stocked: 1N4148 moved to C84410, and the 1x2, 2x15 and 2x17 headers came from other makers (C32713268, C42372523, C19630945). JLCPCB's header 3D models sit 90° off from KiCad's, so the CPL turns every header 270°.
 - Files: Gerber zip, `jlc/` BOM and CPL, LCSC column in `BOM.csv`.
 
+Jitter rerun on the crystal clock (5 MHz HSE/5 from the ST-LINK), Saleae on PG14, 100 MS/s, 90 s each, I-cache on, TIM6 prio 4:
+
+| Capture | Periods | Anomalies | Rate | std | p99 \|dev\| | p99.9 | max |
+|---|---|---|---|---|---|---|---|
+| idle | 90,000 | 0 | +3 ppm | 33 ns | 77 ns | 77 ns | 77 ns |
+| 3 LED fades + debug logging | 90,001 | 0 | +4 ppm | 15 ns | 34 ns | 36 ns | 36 ns |
+
+- p99 1.1 µs -> 77 ns idle, 34 ns loaded. The flat ±1.1 µs spread on 2026-11-05 was the ST-LINK's HSI clock wandering, not the tick. Confirmed.
+- Both are within a few Saleae samples (10 ns at 100 MS/s), so the Saleae can't see the tick's own jitter any more. The DWT min/max (±153 ns idle, ±119 ns loaded) is the better number now: one tick late, the next one early.
+- Load makes no difference, as expected with TIM6 above the FreeRTOS mask.
+- Captures and reports: `docs/results/2026-11-18-tim6-jitter-{idle,load}-90s.*`
+
 Saved for next time:
 - JLCPCB DFM / placement check in Order History
 - Bring-up when the boards arrive: continuity and shorts check bare, 3V3 and 5V with no Nucleo, then on the Nucleo with every shunt pulled, then one signal at a time
 - Check the HX 2x15 header pin length (not listed) seats in the Zio sockets
 - Firmware for the new inputs: HOME, END+/-, AUX, ESTOP
-- Rerun the TIM6 jitter captures on the crystal clock
 - `can test 10000` with the Jetson on the new clock
 - `motor_tick()` in the control tick
 
