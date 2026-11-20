@@ -28,7 +28,7 @@
 
 #define TASKS_MAX   16      /* rows "tasks" can show */
 
-static cli_status_t cmd_version(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_version(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -37,7 +37,7 @@ static cli_status_t cmd_version(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_uptime(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_uptime(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -59,7 +59,7 @@ static char state_char(eTaskState s)
 }
 
 /* uxTaskGetSystemState() needs configUSE_TRACE_FACILITY = 1 */
-static cli_status_t cmd_tasks(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_tasks(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -82,7 +82,7 @@ static cli_status_t cmd_tasks(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_heap(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_heap(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -95,7 +95,7 @@ static cli_status_t cmd_heap(cli_t *cli, int argc, char **argv)
 
 /* Goes through the LED task like everything else, so the CLI and the
  * supervisor can't fight over a pin. */
-static cli_status_t cmd_led(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_led(cli_s *cli, int argc, char **argv)
 {
     led_mode_t mode;
     uint16_t   period = 0;
@@ -121,11 +121,11 @@ static cli_status_t cmd_led(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_msgs(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_msgs(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    msg_stats_t st;
+    msg_stats_s st;
     msg_get_stats(&st);
 
     cli_printf(cli, "posted %lu, bus full %lu, unrouted %lu\r\n",
@@ -138,7 +138,7 @@ static cli_status_t cmd_msgs(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_loglevel(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_loglevel(cli_s *cli, int argc, char **argv)
 {
     if (argc == 2) {
         log_level_t lvl;
@@ -154,7 +154,7 @@ static cli_status_t cmd_loglevel(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_reset(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_reset(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -164,7 +164,7 @@ static cli_status_t cmd_reset(cli_t *cli, int argc, char **argv)
     return CLI_OK;          /* not reached */
 }
 
-static cli_status_t cmd_state(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_state(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -174,7 +174,7 @@ static cli_status_t cmd_state(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_clear_fault(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_clear_fault(cli_s *cli, int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -189,7 +189,7 @@ static cli_status_t cmd_clear_fault(cli_t *cli, int argc, char **argv)
 /* Control tick timing. The ISR stores min/max period in CPU cycles; this
  * turns it into deviation from the ideal 1 ms, in ns. Integers only
  * (newlib-nano has no %f). "jitter clear" restarts the window. */
-static cli_status_t cmd_jitter(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_jitter(cli_s *cli, int argc, char **argv)
 {
     if (argc == 2 && strcmp(argv[1], "clear") == 0) {
         control_reset_period();
@@ -231,7 +231,7 @@ static cli_status_t cmd_jitter(cli_t *cli, int argc, char **argv)
 /* CAN counters and the loopback self-test. The test runs in the RX ISR
  * (ping-pong), so "can test" returns right away; run "can" again to see
  * how it went. 10k frames take about 1-2 s at 1 Mbps. */
-static cli_status_t cmd_can(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_can(cli_s *cli, int argc, char **argv)
 {
     if (argc == 3 && strcmp(argv[1], "test") == 0) {
         char *end;
@@ -286,7 +286,7 @@ static cli_status_t cmd_can(cli_t *cli, int argc, char **argv)
         return CLI_ERR_ARGS;
     }
 
-    can_stats_t st;
+    can_stats_s st;
     can_get_stats(&st);
     cli_printf(cli, "test %s\r\n", can_test_done() ? "idle" : "running");
     cli_printf(cli, "tx %lu, tx_full %lu\r\n",
@@ -302,7 +302,7 @@ static cli_status_t cmd_can(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_motor(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_motor(cli_s *cli, int argc, char **argv)
 {
     if ((argc == 3 || argc == 4) && strcmp(argv[1], "pwm") == 0) {
         /* Duty in percent, -100..100 (sign = direction); the driver takes permille */
@@ -352,7 +352,7 @@ static cli_status_t cmd_motor(cli_t *cli, int argc, char **argv)
         return CLI_ERR_ARGS;
     }
 
-    motor_status_t st;
+    motor_status_s st;
     motor_get_status(&st);
     cli_printf(cli, "duty_permille %d\r\n", st.duty_permille);
     cli_printf(cli, "position %ld\r\n", st.position);
@@ -365,7 +365,7 @@ static cli_status_t cmd_motor(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-const cli_cmd_t cli_cmds[] = {
+const cli_cmd_s cli_cmds[] = {
     /* Any order works ("?" sorts its output); kept alphabetical to read easily */
     { "can",         "can [test <n>|clear]",               "CAN counters, loopback self-test",   cmd_can         },
     { "clear_fault", "clear_fault",                        "clear a latched fault",              cmd_clear_fault },

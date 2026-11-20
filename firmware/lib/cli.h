@@ -13,7 +13,7 @@
  *   ignored. No quoting: args split on spaces/tabs.
  * - "?" is built in and lists commands alphabetically. "? <cmd>" shows
  *   that command's usage.
- * - Not thread-safe. One cli_t per input stream, used from one task.
+ * - Not thread-safe. One cli_s per input stream, used from one task.
  *
  * Author: Haleigh (haleighv)
  * Copyright (c) 2026 haleighv
@@ -44,9 +44,9 @@ typedef enum {
     CLI_EMPTY       = -4        /* blank line, nothing run */
 } cli_status_t;
 
-typedef struct cli cli_t;
+typedef struct cli cli_s;
 
-typedef cli_status_t (*cli_cmd_fn_t)(cli_t *cli, int argc, char **argv);
+typedef cli_status_t (*cli_cmd_fn_t)(cli_s *cli, int argc, char **argv);
 typedef void (*cli_write_fn_t)(const char *s, size_t len);
 
 typedef struct {
@@ -54,11 +54,11 @@ typedef struct {
     const char   *usage;        /* e.g. "led <1-3> <on|off|toggle>" */
     const char   *help;         /* one line for "?" */
     cli_cmd_fn_t  fn;
-} cli_cmd_t;
+} cli_cmd_s;
 
 /* State, set up by cli_init(). Fields are private. */
 struct cli {
-    const cli_cmd_t *cmds;
+    const cli_cmd_s *cmds;
     size_t           num_cmds;
     cli_write_fn_t   write;
     const char      *prompt;
@@ -76,21 +76,21 @@ struct cli {
 };
 
 /* cmds must stay valid (static). prompt may be NULL for none. */
-void cli_init(cli_t *cli, const cli_cmd_t *cmds, size_t num_cmds,
+void cli_init(cli_s *cli, const cli_cmd_s *cmds, size_t num_cmds,
               cli_write_fn_t write, const char *prompt);
 
 /* Feed one received byte. Echoes, edits, and runs the line on Enter. */
-void cli_input(cli_t *cli, char c);
+void cli_input(cli_s *cli, char c);
 
 /* Split and run one line. line is modified (split in place). Used by
  * cli_input(); also handy for tests and for running commands from code. */
-cli_status_t cli_execute(cli_t *cli, char *line);
+cli_status_t cli_execute(cli_s *cli, char *line);
 
 /* Print the prompt */
-void cli_prompt(cli_t *cli);
+void cli_prompt(cli_s *cli);
 
 /* Output for command handlers. Truncated at CLI_PRINTF_MAX. */
-void cli_printf(cli_t *cli, const char *fmt, ...)
+void cli_printf(cli_s *cli, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 
 #ifdef __cplusplus

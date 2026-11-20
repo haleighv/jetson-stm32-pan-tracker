@@ -8,7 +8,7 @@
  * Notes:
  * - led_set() and the helpers post EVENT_LED_CMD to the message bus and
  *   never block. They return false if the bus queue is full.
- * - Task context only. From an ISR, build a msg_t and use msg_post_from_isr().
+ * - Task context only. From an ISR, build a msg_s and use msg_post_from_isr().
  * - Fade is software PWM from a 1 ms software timer: 10 brightness steps at
  *   100 Hz, so it's a little steppy. The timer only runs while an LED is
  *   fading. Hardware PWM would be smoother but needs timer pins.

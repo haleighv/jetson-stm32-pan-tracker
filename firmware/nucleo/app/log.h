@@ -70,14 +70,14 @@ typedef struct {
     log_level_t  min_level;                             /* sink drops anything less severe */
     bool         enabled;
     bool         console;                               /* also gets log_console() text (CLI) */
-} log_sink_t;
+} log_sink_s;
 
 /* Register a sink. Call before or after log_init(). The struct must stay
  * valid forever (static). Returns false if LOG_MAX_SINKS is reached. */
-bool log_sink_register(log_sink_t *sink);
+bool log_sink_register(log_sink_s *sink);
 
 /* Look up a registered sink by name, NULL if not found. For the CLI. */
-log_sink_t *log_sink_find(const char *name);
+log_sink_s *log_sink_find(const char *name);
 
 /* --- Core --- */
 

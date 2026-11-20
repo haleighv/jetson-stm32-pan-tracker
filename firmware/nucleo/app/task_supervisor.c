@@ -32,7 +32,7 @@
 static TickType_t xLastStateChangeTime;   /* tick count when the state last changed */
 static supervisor_state_t state = SUPERVISOR_BOOT;
 static msg_queue_id_t supervisor_msg_queue_id;
-static supervisor_status_t supervisor_status = {0};
+static supervisor_status_s supervisor_status = {0};
 static const char * const state_names[] = {
     [SUPERVISOR_BOOT] = "SUPERVISOR_BOOT",
     [SUPERVISOR_IDLE] = "SUPERVISOR_IDLE",
@@ -106,7 +106,7 @@ static void initialize(void)
 /* Drain the queue without waiting; the 10 ms loop sets the pace */
 static void handle_messages(void)
 {
-    msg_t message;
+    msg_s message;
 
     while (msg_recv(supervisor_msg_queue_id, &message, 0)) {
         switch (message.id) {

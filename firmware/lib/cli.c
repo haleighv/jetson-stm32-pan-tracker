@@ -21,12 +21,12 @@
 /* Escape sequence states: ESC, then '[' (CSI), then a final byte 0x40-0x7e */
 enum { ESC_NONE = 0, ESC_START, ESC_CSI };
 
-static void out(cli_t *cli, const char *s)
+static void out(cli_s *cli, const char *s)
 {
     cli->write(s, strlen(s));
 }
 
-void cli_init(cli_t *cli, const cli_cmd_t *cmds, size_t num_cmds,
+void cli_init(cli_s *cli, const cli_cmd_s *cmds, size_t num_cmds,
               cli_write_fn_t write, const char *prompt)
 {
     memset(cli, 0, sizeof(*cli));
@@ -37,14 +37,14 @@ void cli_init(cli_t *cli, const cli_cmd_t *cmds, size_t num_cmds,
     cli->hist_pos = -1;
 }
 
-void cli_prompt(cli_t *cli)
+void cli_prompt(cli_s *cli)
 {
     if (cli->prompt != NULL) {
         out(cli, cli->prompt);
     }
 }
 
-void cli_printf(cli_t *cli, const char *fmt, ...)
+void cli_printf(cli_s *cli, const char *fmt, ...)
 {
     char buf[CLI_PRINTF_MAX];
     va_list ap;
@@ -59,7 +59,7 @@ void cli_printf(cli_t *cli, const char *fmt, ...)
     }
 }
 
-static const cli_cmd_t *find_cmd(const cli_t *cli, const char *name)
+static const cli_cmd_s *find_cmd(const cli_s *cli, const char *name)
 {
     for (size_t i = 0; i < cli->num_cmds; i++) {
         if (strcmp(cli->cmds[i].name, name) == 0) {
@@ -75,10 +75,10 @@ static const cli_cmd_t *find_cmd(const cli_t *cli, const char *name)
 /* Built in, so every table gets it for free. Prints alphabetically
  * without sorting the table: each pass prints the smallest name that's
  * bigger than the last one printed. O(n^2), fine for a handful of commands. */
-static cli_status_t cmd_help(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_help(cli_s *cli, int argc, char **argv)
 {
     if (argc >= 2) {
-        const cli_cmd_t *cmd = find_cmd(cli, argv[1]);
+        const cli_cmd_s *cmd = find_cmd(cli, argv[1]);
         if (cmd == NULL) {
             cli_printf(cli, "unknown command: %s\r\n", argv[1]);
             return CLI_ERR_UNKNOWN;
@@ -115,7 +115,7 @@ static cli_status_t cmd_help(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-cli_status_t cli_execute(cli_t *cli, char *line)
+cli_status_t cli_execute(cli_s *cli, char *line)
 {
     char *argv[CLI_ARGV_MAX];
     int argc = 0;
@@ -147,7 +147,7 @@ cli_status_t cli_execute(cli_t *cli, char *line)
         return cmd_help(cli, argc, argv);
     }
 
-    const cli_cmd_t *cmd = find_cmd(cli, argv[0]);
+    const cli_cmd_s *cmd = find_cmd(cli, argv[0]);
     if (cmd == NULL) {
         cli_printf(cli, "unknown command: %s (try '?')\r\n", argv[0]);
         return CLI_ERR_UNKNOWN;
@@ -163,7 +163,7 @@ cli_status_t cli_execute(cli_t *cli, char *line)
 /* --- History --- */
 
 /* Save a finished line as the newest entry. Skips blanks and repeats. */
-static void history_add(cli_t *cli, const char *line)
+static void history_add(cli_s *cli, const char *line)
 {
     if (line[strspn(line, " \t")] == '\0') {
         return;     /* blank or only spaces */
@@ -183,7 +183,7 @@ static void history_add(cli_t *cli, const char *line)
 
 /* Replace the line being edited and redraw it. One write: return to
  * column 0, clear to end of line (ANSI ESC [K), prompt, line. */
-static void line_replace(cli_t *cli, const char *text)
+static void line_replace(cli_s *cli, const char *text)
 {
     strncpy(cli->line, text, CLI_LINE_MAX);
     cli->line[CLI_LINE_MAX] = '\0';
@@ -191,7 +191,7 @@ static void line_replace(cli_t *cli, const char *text)
     cli_printf(cli, "\r\x1b[K%s%s", (cli->prompt != NULL) ? cli->prompt : "", cli->line);
 }
 
-static void history_up(cli_t *cli)
+static void history_up(cli_s *cli)
 {
     if (cli->hist_pos + 1 >= cli->hist_count) {
         return;     /* already at the oldest */
@@ -204,7 +204,7 @@ static void history_up(cli_t *cli)
     line_replace(cli, cli->history[cli->hist_pos]);
 }
 
-static void history_down(cli_t *cli)
+static void history_down(cli_s *cli)
 {
     if (cli->hist_pos < 0) {
         return;     /* not browsing */
@@ -215,7 +215,7 @@ static void history_down(cli_t *cli)
 
 /* --- Input --- */
 
-void cli_input(cli_t *cli, char c)
+void cli_input(cli_s *cli, char c)
 {
     /* Escape sequences: up/down arrows (ESC [ A / ESC [ B) browse history,
      * everything else is swallowed */

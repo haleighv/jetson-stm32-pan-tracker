@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-extern const cli_cmd_t cli_cmds[];
+extern const cli_cmd_s cli_cmds[];
 extern const size_t    cli_cmds_count;
 
 #ifdef __cplusplus

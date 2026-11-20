@@ -32,7 +32,7 @@ static int   last_argc;
 static char  last_argv[CLI_ARGV_MAX][CLI_LINE_MAX + 1];
 static int   calls;
 
-static cli_status_t cmd_echo(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_echo(cli_s *cli, int argc, char **argv)
 {
     (void)cli;
     calls++;
@@ -43,7 +43,7 @@ static cli_status_t cmd_echo(cli_t *cli, int argc, char **argv)
     return CLI_OK;
 }
 
-static cli_status_t cmd_needs_arg(cli_t *cli, int argc, char **argv)
+static cli_status_t cmd_needs_arg(cli_s *cli, int argc, char **argv)
 {
     (void)cli;
     (void)argv;
@@ -51,13 +51,13 @@ static cli_status_t cmd_needs_arg(cli_t *cli, int argc, char **argv)
 }
 
 /* Deliberately not in alphabetical order */
-static const cli_cmd_t cmds[] = {
+static const cli_cmd_s cmds[] = {
     { "echo",  "echo [args...]", "record args",     cmd_echo },
     { "need",  "need <x>",       "needs one arg",   cmd_needs_arg },
     { "alpha", "alpha",          "same as echo",    cmd_echo },
 };
 
-static cli_t cli;
+static cli_s cli;
 
 static void type(const char *s)
 {

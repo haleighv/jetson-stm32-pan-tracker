@@ -33,14 +33,14 @@ typedef struct {
     uint8_t  level;
     uint8_t  len;                   /* bytes in text, not NUL-terminated */
     char     text[LOG_MSG_MAX];
-} log_msg_t;
+} log_msg_s;
 
-_Static_assert(LOG_MSG_MAX <= 255, "log_msg_t.len is a uint8_t");
+_Static_assert(LOG_MSG_MAX <= 255, "log_msg_s.len is a uint8_t");
 
 static QueueHandle_t      log_queue;
 static SemaphoreHandle_t  flush_done;
 
-static log_sink_t        *sinks[LOG_MAX_SINKS];
+static log_sink_s        *sinks[LOG_MAX_SINKS];
 static bool               sink_ready[LOG_MAX_SINKS];   /* init() has run */
 static volatile uint8_t   sink_count;
 
@@ -52,7 +52,7 @@ static const char *level_names[LOG_LVL_COUNT] = { "ERROR", "WARN", "INFO", "DEBU
 
 /* --- Sinks --- */
 
-bool log_sink_register(log_sink_t *sink)
+bool log_sink_register(log_sink_s *sink)
 {
     bool ok = false;
 
@@ -72,7 +72,7 @@ bool log_sink_register(log_sink_t *sink)
     return ok;
 }
 
-log_sink_t *log_sink_find(const char *name)
+log_sink_s *log_sink_find(const char *name)
 {
     for (uint8_t i = 0; i < sink_count; i++) {
         if (strcmp(sinks[i]->name, name) == 0) {
@@ -88,7 +88,7 @@ log_sink_t *log_sink_find(const char *name)
 static void sinks_write(uint8_t lvl, const char *msg, size_t len)
 {
     for (uint8_t i = 0; i < sink_count; i++) {
-        log_sink_t *s = sinks[i];
+        log_sink_s *s = sinks[i];
 
         if (!sink_ready[i]) {
             sink_ready[i] = true;
@@ -118,7 +118,7 @@ static void sinks_flush(void)
 
 void log_init(void)
 {
-    log_queue  = xQueueCreate(LOG_QUEUE_DEPTH, sizeof(log_msg_t));
+    log_queue  = xQueueCreate(LOG_QUEUE_DEPTH, sizeof(log_msg_s));
     flush_done = xSemaphoreCreateBinary();
     configASSERT(log_queue != NULL);
     configASSERT(flush_done != NULL);
@@ -150,7 +150,7 @@ void log_write(log_level_t lvl, const char *tag, const char *fmt, ...)
     /* Formatting is too slow and stack-hungry for an ISR */
     configASSERT(!xPortIsInsideInterrupt());
 
-    log_msg_t msg;
+    log_msg_s msg;
     msg.level = (uint8_t)lvl;
 
     /* Leave room for "\r\n" after the text */
@@ -203,7 +203,7 @@ void log_console(const char *s, size_t len)
         return;
     }
 
-    log_msg_t msg;
+    log_msg_s msg;
     msg.level = LOG_LVL_CONSOLE;
 
     while (len > 0) {
@@ -231,7 +231,7 @@ void log_flush(void)
     /* Queue a marker behind everything already queued, then wait for the
      * log task to reach it and flush the sinks. Bounded waits so a stuck
      * sink can't hang the caller. */
-    log_msg_t marker = { .level = LOG_LVL_FLUSH, .len = 0 };
+    log_msg_s marker = { .level = LOG_LVL_FLUSH, .len = 0 };
     if (xQueueSend(log_queue, &marker, pdMS_TO_TICKS(100)) == pdPASS) {
         (void)xSemaphoreTake(flush_done, pdMS_TO_TICKS(500));
     }
@@ -266,7 +266,7 @@ void task_log(void *arg)
 
     configASSERT(log_queue != NULL);    /* log_init() must run first */
 
-    log_msg_t msg;
+    log_msg_s msg;
     uint32_t  reported = 0;
 
     for (;;) {

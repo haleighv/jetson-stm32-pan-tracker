@@ -54,7 +54,19 @@ typedef struct {
     uint32_t fault_count;    /* faults latched since boot */
     uint32_t ms_remaining;   /* time left on the current run, 0 if stopped */
     bool     run_active;     /* run active flag */
-} motor_status_t;
+} motor_status_s;
+
+typedef enum {
+    MOTOR_REQUEST_RUN = 0,
+    MOTOR_REQUEST_STOP,
+    MOTOR_REQUEST_ZERO,
+} motor_request_type_t;
+
+typedef struct {
+    motor_request_type_t type;
+    int16_t duty_permille;
+    uint32_t run_ticks;  /* 1 tick = 1 ms */
+} motor_request_s;
 
 /* Start TIM1 PWM at 0%, start the TIM4 encoder, calibrate ADC3, set up
  * the EN/DIAG falling-edge interrupt, then release EN last. Call once from
@@ -94,7 +106,7 @@ bool motor_fault(void);
 bool motor_clear_fault(void);
 
 /* Snapshot for the CLI. */
-void motor_get_status(motor_status_t *status);
+void motor_get_status(motor_status_s *status);
 
 #ifdef __cplusplus
 }

@@ -41,9 +41,9 @@ typedef struct {
     uint16_t             period_ms;
     uint32_t             phase_ms;      /* fade position: reset by apply(), advanced by fade_cb() */
     TimerHandle_t        blink_timer;
-} led_state_t;
+} led_state_s;
 
-static led_state_t leds[LED_COUNT] = {
+static led_state_s leds[LED_COUNT] = {
     [LED_GREEN] = { .port = LD1_GPIO_Port, .pin = LD1_Pin },
     [LED_AMBER] = { .port = LD2_GPIO_Port, .pin = LD2_Pin },
     [LED_RED]   = { .port = LD3_GPIO_Port, .pin = LD3_Pin },
@@ -62,7 +62,7 @@ bool led_set(led_id_t led, led_mode_t mode, uint16_t period_ms)
     if (led >= LED_COUNT || mode >= LED_MODE_COUNT) {
         return false;
     }
-    msg_t m = {
+    msg_s m = {
         .id = EVENT_LED_CMD,
         .data.led = { .led = (uint8_t)led, .mode = (uint8_t)mode, .period_ms = period_ms },
     };
@@ -89,7 +89,7 @@ bool led_mode_from_str(const char *s, led_mode_t *out)
 
 static void blink_cb(TimerHandle_t t)
 {
-    led_state_t *l = &leds[(uintptr_t)pvTimerGetTimerID(t)];
+    led_state_s *l = &leds[(uintptr_t)pvTimerGetTimerID(t)];
 
     taskENTER_CRITICAL();
     if (l->mode == LED_MODE_BLINK) {
@@ -104,7 +104,7 @@ static void fade_cb(TimerHandle_t t)
     pwm_count = (uint8_t)((pwm_count + 1) % FADE_PWM_STEPS);
 
     for (int i = 0; i < LED_COUNT; i++) {
-        led_state_t *l = &leds[i];
+        led_state_s *l = &leds[i];
 
         taskENTER_CRITICAL();
         if (l->mode == LED_MODE_FADE) {
@@ -128,14 +128,14 @@ static bool any_fading(void)
     return false;
 }
 
-static void apply(const msg_led_t *cmd)
+static void apply(const msg_led_s *cmd)
 {
     if (cmd->led >= LED_COUNT || cmd->mode >= LED_MODE_COUNT) {
         LOG_W("bad command led %u mode %u", cmd->led, cmd->mode);
         return;
     }
 
-    led_state_t *l    = &leds[cmd->led];
+    led_state_s *l    = &leds[cmd->led];
     led_mode_t   mode = (led_mode_t)cmd->mode;
     uint16_t     period = cmd->period_ms;
 
@@ -207,7 +207,7 @@ void task_led(void *arg)
     initialize();
     task_sync();
 
-    msg_t message;
+    msg_s message;
     for (;;) {
         if (!msg_recv(led_msg_queue_id, &message, portMAX_DELAY)) {
             continue;

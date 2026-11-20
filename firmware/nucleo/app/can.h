@@ -39,7 +39,7 @@ typedef struct {
     bool     error_passive; /* TEC or REC > 127: error flags can't disturb the bus */
     bool     bus_off;       /* TEC > 255: off the bus until FDCAN is restarted */
     bool     warning;       /* TEC or REC >= 96 */
-} can_stats_t;
+} can_stats_s;
 
 /* Filters, RX callback, RX notification, then start. Register before
  * start, same as TIM6. Call once from the supervisor. */
@@ -51,7 +51,7 @@ bool can_send(uint32_t id, const uint8_t *data, uint8_t len);
 
 /* Snapshot of the counters plus the controller's error state (TEC, REC,
  * error passive, bus off). Task context. */
-void can_get_stats(can_stats_t *stats);
+void can_get_stats(can_stats_s *stats);
 
 /* Zero the counters. Task context. */
 void can_reset_stats(void);

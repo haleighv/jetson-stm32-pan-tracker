@@ -21,7 +21,7 @@
 
 /* Counters. Written by the RX callback and can_send() (which the callback
  * calls during a test); tasks read them through can_get_stats(). */
-static volatile can_stats_t stats;
+static volatile can_stats_s stats;
 
 /* Self-test state. test_remaining counts frames still to *receive*. Only
  * the RX callback changes these once a test is running. */
@@ -192,7 +192,7 @@ bool can_send(uint32_t id, const uint8_t *data, uint8_t len)
     return true;
 }
 
-void can_get_stats(can_stats_t *out)
+void can_get_stats(can_stats_s *out)
 {
     /* Critical section masks the FDCAN interrupt (priority 6), so the
      * counters come out as one consistent snapshot, not half-updated. */
@@ -217,7 +217,7 @@ void can_get_stats(can_stats_t *out)
 void can_reset_stats(void)
 {
     taskENTER_CRITICAL();
-    stats = (can_stats_t){0};
+    stats = (can_stats_s){0};
     taskEXIT_CRITICAL();
 }
 

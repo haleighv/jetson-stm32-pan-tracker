@@ -48,7 +48,7 @@ typedef struct
     uint16_t priority;
     TaskHandle_t *handle;
     bool sync;              /* task calls task_sync() after its initialize() */
-} task_descriptor_t;
+} task_descriptor_s;
 
 void task_init_run(void *arg);
 

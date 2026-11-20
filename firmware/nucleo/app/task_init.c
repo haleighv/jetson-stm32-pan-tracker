@@ -22,7 +22,7 @@
 /* Stack sizes in bytes. Uncomment rows as the tasks get written.
  * sync: true if the task calls task_sync(). log is false so it can print
  * while everyone else initializes. */
-static const task_descriptor_t task_list[] = {
+static const task_descriptor_s task_list[] = {
     {task_cli,            "cli",          1024*3, NULL, TASK_PRIORITY_LOW,    NULL, true },
 //    {task_host_comms, "host comms",       2048, NULL, TASK_PRIORITY_NORMAL, NULL, true },
     {task_log, "log",                     1024*2, NULL, TASK_PRIORITY_LOW,    NULL, false},

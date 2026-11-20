@@ -15,17 +15,17 @@
 #include "task.h"
 #include "queue.h"
 
-_Static_assert(sizeof(msg_t) == 12, "msg_t grew; check queue RAM");
+_Static_assert(sizeof(msg_s) == 12, "msg_s grew; check queue RAM");
 _Static_assert(MSG_MAX_SUBSCRIBERS <= 32, "subscribers are bits in a uint32_t");
 
 typedef struct {
     const char       *name;
     QueueHandle_t     queue;
     volatile uint32_t dropped;
-} subscriber_t;
+} subscriber_s;
 
 static QueueHandle_t      bus;
-static subscriber_t       subs[MSG_MAX_SUBSCRIBERS];
+static subscriber_s       subs[MSG_MAX_SUBSCRIBERS];
 static volatile uint8_t   num_subs;
 
 /* sub_mask[id] bit n set = subscriber n wants event id */
@@ -39,14 +39,14 @@ static volatile uint32_t  unrouted;
 
 void msg_init(void)
 {
-    bus = xQueueCreate(MSG_QUEUE_DEPTH, sizeof(msg_t));
+    bus = xQueueCreate(MSG_QUEUE_DEPTH, sizeof(msg_s));
     configASSERT(bus != NULL);
     vQueueAddToRegistry(bus, "msg_bus");    /* names it in the debugger */
 }
 
 msg_queue_id_t msg_subscriber_create(const char *name, uint8_t depth)
 {
-    QueueHandle_t q = xQueueCreate(depth, sizeof(msg_t));
+    QueueHandle_t q = xQueueCreate(depth, sizeof(msg_s));
     if (q == NULL) {
         LOG_E("no heap for %s queue", name);
         return MSG_QUEUE_ID_INVALID;
@@ -83,7 +83,7 @@ bool msg_subscribe(msg_queue_id_t queue_id, event_id_t id)
 
 /* --- Posting --- */
 
-bool msg_post(const msg_t *m, TickType_t timeout)
+bool msg_post(const msg_s *m, TickType_t timeout)
 {
     if (bus == NULL || m == NULL || m->id >= EVENT_COUNT) {
         return false;
@@ -100,7 +100,7 @@ bool msg_post(const msg_t *m, TickType_t timeout)
     return ok;
 }
 
-bool msg_post_from_isr(const msg_t *m, BaseType_t *woken)
+bool msg_post_from_isr(const msg_s *m, BaseType_t *woken)
 {
     if (bus == NULL || m == NULL || m->id >= EVENT_COUNT) {
         return false;
@@ -119,7 +119,7 @@ bool msg_post_from_isr(const msg_t *m, BaseType_t *woken)
 
 /* --- Receiving --- */
 
-bool msg_recv(msg_queue_id_t self, msg_t *m, TickType_t timeout)
+bool msg_recv(msg_queue_id_t self, msg_s *m, TickType_t timeout)
 {
     if (self < 0 || self >= (msg_queue_id_t)num_subs || m == NULL) {
         return false;
@@ -143,7 +143,7 @@ void task_msg(void *arg)
     initialize();
     task_sync();
 
-    msg_t m;
+    msg_s m;
     for (;;) {
         if (xQueueReceive(bus, &m, portMAX_DELAY) != pdPASS) {
             continue;
@@ -170,7 +170,7 @@ void task_msg(void *arg)
 
 void event_post(event_id_t event)
 {
-    msg_t m = {
+    msg_s m = {
         .id = event
     };
     msg_post(&m, 0);
@@ -178,7 +178,7 @@ void event_post(event_id_t event)
 
 /* --- Stats --- */
 
-void msg_get_stats(msg_stats_t *out)
+void msg_get_stats(msg_stats_s *out)
 {
     taskENTER_CRITICAL();
     out->posted       = posted;

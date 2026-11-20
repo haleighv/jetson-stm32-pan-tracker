@@ -33,7 +33,7 @@ typedef enum {
 
 typedef struct {
     uint8_t active_faults;
-} supervisor_status_t;
+} supervisor_status_s;
 
 void task_supervisor(void *arg);
 

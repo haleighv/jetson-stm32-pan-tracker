@@ -43,17 +43,17 @@ typedef struct {
     uint8_t  led;           /* led_id_t */
     uint8_t  mode;          /* led_mode_t */
     uint16_t period_ms;     /* blink/fade period, 0 = default */
-} msg_led_t;
+} msg_led_s;
 
 typedef struct {
     uint16_t id;            /* event_id_t */
     uint16_t reserved;
     union {
-        msg_led_t led;
+        msg_led_s led;
         uint32_t  u32[2];
         int32_t   i32[2];
     } data;
-} msg_t;
+} msg_s;
 
 /* ID of a subscriber's delivery queue. MSG_QUEUE_ID_INVALID if creation failed. */
 typedef int8_t msg_queue_id_t;
@@ -65,7 +65,7 @@ typedef struct {
     uint32_t post_dropped;      /* global queue full */
     uint32_t unrouted;          /* no subscriber for that event */
     uint8_t  num_subs;
-} msg_stats_t;
+} msg_stats_s;
 
 /* Create the global queue. Once, in init_tasks(), before creating tasks. */
 void msg_init(void);
@@ -81,18 +81,18 @@ msg_queue_id_t msg_subscriber_create(const char *name, uint8_t depth);
 bool msg_subscribe(msg_queue_id_t queue_id, event_id_t id);
 
 /* Post to the bus. Task context. timeout 0 = never wait. */
-bool msg_post(const msg_t *m, TickType_t timeout);
+bool msg_post(const msg_s *m, TickType_t timeout);
 
 /* Post from an ISR. Pass woken to portYIELD_FROM_ISR() afterwards. */
-bool msg_post_from_isr(const msg_t *m, BaseType_t *woken);
+bool msg_post_from_isr(const msg_s *m, BaseType_t *woken);
 
 /* Subscriber only: wait for its next message. */
-bool msg_recv(msg_queue_id_t self, msg_t *m, TickType_t timeout);
+bool msg_recv(msg_queue_id_t self, msg_s *m, TickType_t timeout);
 
 /* Post a message with just the event field */
 void event_post(event_id_t event);
 
-void        msg_get_stats(msg_stats_t *out);
+void        msg_get_stats(msg_stats_s *out);
 const char *msg_queue_name(msg_queue_id_t queue_id);
 uint32_t    msg_queue_dropped(msg_queue_id_t queue_id);     /* delivery queue full */
 

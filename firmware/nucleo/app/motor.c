@@ -72,7 +72,7 @@ static bool fault_live(void)
 static void motor_fault_isr(void)
 {
     BaseType_t woken = pdFALSE;
-    msg_t m = { .id = EVENT_MOTOR_FAULT };
+    msg_s m = { .id = EVENT_MOTOR_FAULT };
     bridge_coast();
     /* filter additional fault triggers if latched */
     if (fault_latched) {
@@ -303,7 +303,7 @@ void EXTI15_10_IRQHandler(void)
     }
 }
 
-void motor_get_status(motor_status_t *status)
+void motor_get_status(motor_status_s *status)
 {
     if (!status) {
         return;

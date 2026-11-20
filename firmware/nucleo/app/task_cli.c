@@ -32,7 +32,7 @@
 
 static StreamBufferHandle_t rx_stream;
 static uint8_t              rx_byte;    /* HAL receives one byte at a time into here */
-static cli_t                cli;
+static cli_s                cli;
 
 static void cli_write(const char *s, size_t len)
 {

@@ -25,7 +25,7 @@ static void uart_write(const char *msg, size_t len)
     (void)HAL_UART_Transmit(&huart3, (const uint8_t *)msg, (uint16_t)len, UART_SINK_TIMEOUT_MS);
 }
 
-static log_sink_t uart_sink = {
+static log_sink_s uart_sink = {
     .name      = "uart",
     .init      = NULL,              /* USART3 is set up by MX_USART3_UART_Init() */
     .write     = uart_write,
