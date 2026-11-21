@@ -17,6 +17,8 @@
 #include "main.h"
 #include "tim.h"
 
+#include "motor.h"
+
 /* ISR only */
 static uint32_t last_cyc;
 static bool     have_last;
@@ -72,6 +74,9 @@ static void control_tick_isr(TIM_HandleTypeDef *htim)
 
     /* Scope pin (PG14 / D2): one edge per tick */
     HAL_GPIO_TogglePin(SCOPE_GPIO_Port, SCOPE_Pin);
+
+    /* Handle motor control */
+    motor_control_tick_handler();
 }
 
 /* --- Public --- */

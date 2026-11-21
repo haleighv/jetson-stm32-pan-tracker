@@ -302,6 +302,15 @@ static cli_status_t cmd_can(cli_s *cli, int argc, char **argv)
     return CLI_OK;
 }
 
+
+static const char * const motor_state_names[] = {
+    [MOTOR_STATE_UNINITIALIZED] = "MOTOR_STATE_UNINITIALIZED",
+    [MOTOR_STATE_RUNNING_POS] = "MOTOR_STATE_RUNNING_POS",
+    [MOTOR_STATE_RUNNING_NEG] = "MOTOR_STATE_RUNNING_NEG",
+    [MOTOR_STATE_BRAKE] = "MOTOR_STATE_BRAKE",
+    [MOTOR_STATE_COAST] = "MOTOR_STATE_COAST",
+};
+
 static cli_status_t cmd_motor(cli_s *cli, int argc, char **argv)
 {
     if ((argc == 3 || argc == 4) && strcmp(argv[1], "pwm") == 0) {
@@ -360,8 +369,7 @@ static cli_status_t cmd_motor(cli_s *cli, int argc, char **argv)
     cli_printf(cli, "fault %d\r\n", st.fault);
     cli_printf(cli, "fault_count %lu\r\n", st.fault_count);
     cli_printf(cli, "ms_remaining %lu\r\n", st.ms_remaining);
-    cli_printf(cli, "run_active %d\r\n", st.run_active);
-
+    cli_printf(cli, "state: %s\r\n",  motor_state_names[st.state]);
     return CLI_OK;
 }
 

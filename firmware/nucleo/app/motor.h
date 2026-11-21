@@ -46,6 +46,14 @@ extern "C" {
 #define MOTOR_RUN_MS_DEFAULT 1000
 #define MOTOR_RUN_MS_MAX     5000
 
+typedef enum {
+    MOTOR_STATE_UNINITIALIZED = 0,
+    MOTOR_STATE_RUNNING_POS,
+    MOTOR_STATE_RUNNING_NEG,
+    MOTOR_STATE_BRAKE,
+    MOTOR_STATE_COAST,
+} motor_state_t;
+
 typedef struct {
     int16_t  duty_permille;  /* -1000..1000, 0 when stopped */
     int32_t  position;       /* encoder counts since motor_zero() */
@@ -53,7 +61,7 @@ typedef struct {
     bool     fault;          /* latched by the EXTI ISR or the poll */
     uint32_t fault_count;    /* faults latched since boot */
     uint32_t ms_remaining;   /* time left on the current run, 0 if stopped */
-    bool     run_active;     /* run active flag */
+    motor_state_t state;     /* state enum */
 } motor_status_s;
 
 typedef enum {
@@ -72,10 +80,6 @@ typedef struct {
  * the EN/DIAG falling-edge interrupt, then release EN last. Call once from
  * the supervisor after can_start(). */
 void motor_start(void);
-
-/* Set direction and duty, -1000..1000 permille. Sets INA/INB before
- * raising the duty. Returns false if out of range or a fault is latched. */
-bool motor_set(int16_t duty_permille);
 
 /* motor_set() with a deadline. run_ms 0 means the default; clamped to
  * MOTOR_RUN_MS_MAX. */
@@ -107,6 +111,9 @@ bool motor_clear_fault(void);
 
 /* Snapshot for the CLI. */
 void motor_get_status(motor_status_s *status);
+
+/* isr-safe motor control. called from control isr */
+void motor_control_tick_handler(void);
 
 #ifdef __cplusplus
 }
