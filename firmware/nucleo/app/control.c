@@ -72,10 +72,11 @@ static void control_tick_isr(TIM_HandleTypeDef *htim)
     last_cyc  = now_cyc;
     tick_count++;
 
-    /* Scope pin (PG14 / D2): one edge per tick */
+    /* Scope pin (PG14 / D2): one edge per tick. Before the motor work, so
+     * the edge timing doesn't move with how long that takes. */
     HAL_GPIO_TogglePin(SCOPE_GPIO_Port, SCOPE_Pin);
 
-    /* Handle motor control */
+    /* Motor: requests, position, deadline, backup fault check */
     motor_control_tick_handler();
 }
 

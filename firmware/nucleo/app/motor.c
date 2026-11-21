@@ -4,6 +4,11 @@
  * VNH5019 direction/duty, encoder position, current sense, fault line,
  * and the run deadline. See motor.h.
  *
+ * Single writer: motor_control_tick_handler() (TIM6, NVIC 4) owns the
+ * bridge and the position. Tasks post requests; the fault ISR (NVIC 5,
+ * below the tick) only latches and coasts. motor_start() writes the
+ * bridge once, before it enables the tick's handling.
+ *
  * Author: Haleigh (haleighv)
  * Copyright (c) 2026 haleighv
  * SPDX-License-Identifier: MIT
@@ -37,20 +42,26 @@ typedef enum {
     EN_STUCK_HIGH,   /* we drive it low but it reads high: wiring fault */
 } en_state_t;
 
+/* Bridge and position: written by the tick (and the fault ISR via
+ * bridge_coast()), read by tasks */
 static volatile int16_t       duty;                    /* last commanded duty, permille */
 static volatile int32_t       position = 0;            /* extended encoder count */
-static uint16_t               last_cnt = 0;            /* TIM4 CNT at the previous read */
-static volatile uint32_t      run_ticks_remaining = 0;
-static volatile bool          motor_started = false;
-static volatile bool          fault_latched;           /* set by the EXTI ISR or the poll */
-static volatile uint32_t      fault_count;
+static uint16_t               last_cnt = 0;            /* tick only: TIM4 CNT at the previous tick */
+static volatile uint32_t      run_ticks_remaining = 0; /* ms left on the current run, 0 if none */
 static volatile motor_state_t state = MOTOR_STATE_UNINITIALIZED;
-static bool volatile          poll_fault_detected;
-static bool volatile          run_complete = false;
 
-static motor_request_s   motor_request = {0};        /* writer: task; reader: motor tick handler */
-static volatile uint32_t motor_request_sequence = 0; /* odd during the write, even otherwise */
-static uint32_t          motor_request_applied = 0;  /* used by motor tick handler only: last request applied */
+static volatile bool          motor_started = false;   /* set last in motor_start(): gates the tick */
+static volatile bool          fault_latched;           /* set by the EXTI ISR or the tick's check, cleared by motor_clear_fault() */
+static volatile uint32_t      fault_count;
+
+/* Tick -> motor_poll() flags: the tick sets, motor_poll() acts then clears */
+static volatile bool          poll_fault_detected;     /* fault found by the tick's backup check */
+static volatile bool          run_complete = false;    /* run deadline reached */
+
+/* Task -> tick requests (see post_motor_ctrl_request()) */
+static motor_request_s   motor_request = {0};        /* written by tasks, read by the tick */
+static volatile uint32_t motor_request_sequence = 0; /* odd while a task is writing, even otherwise */
+static uint32_t          motor_request_applied = 0;  /* tick only: last even value applied */
 
 /* Reads ODR and IDR once each. Register reads only: safe in any context. */
 static en_state_t en_state(void)
@@ -76,8 +87,13 @@ static void en_release(void)
     HAL_GPIO_WritePin(MOTOR_EN_GPIO_Port, MOTOR_EN_Pin, GPIO_PIN_SET);
 }
 
-/* Post a request to the tick handler isr (no FreeRTOS calls allowed) for motor control.
- * Ensure that the request mod operation is atomic to guard competing requests */
+/* Task side of the request record. The tick (NVIC 4) isn't masked by
+ * taskENTER_CRITICAL(), so it can run in the middle of this. The sequence
+ * counter is odd while the fields are written, and the tick skips an odd
+ * value, so it never applies a half-written record. The critical section
+ * only serializes tasks against each other. __DMB() keeps the compiler
+ * from moving the field writes past the counter. A second request before
+ * the next tick replaces the first: the newest one counts. */
 static void post_motor_ctrl_request(motor_request_type_t motor_request_type, int16_t duty, uint32_t ticks)
 {
     if (!motor_started) {
@@ -95,23 +111,24 @@ static void post_motor_ctrl_request(motor_request_type_t motor_request_type, int
     taskEXIT_CRITICAL();
 }
 
-/* Helper function for checking request validity */
+/* Tick only: a complete (even) request the tick hasn't applied yet */
 static bool is_valid_new_request(void)
 {
     return (!(motor_request_sequence % 2) && (motor_request_sequence != motor_request_applied));
 }
 
-/* Helper function for filtering requests */
+/* Tick only: mark a pending request applied without acting on it (fault
+ * latched, or a zero-duty run), so it can't start later */
 static void filter_request(void)
 {
     if (is_valid_new_request()) {
-        /* update the applied request id without perfoming request action */
         motor_request_applied = motor_request_sequence;
     }
 }
 
-/* Normal stop: short the motor through both low sides (Table 12, PWM high).
- * Task context only, inside taskENTER_CRITICAL(). */
+/* Normal stop and idle: short the motor through both low sides (Table 12,
+ * PWM high). The tick, plus motor_start() before the tick is enabled.
+ * Never from the fault ISR: a faulted driver coasts. */
 static void bridge_brake(void)
 {
     HAL_GPIO_WritePin(MOTOR_INA_GPIO_Port, MOTOR_INA_Pin, GPIO_PIN_RESET);
@@ -124,8 +141,8 @@ static void bridge_brake(void)
 
 /* Fault: everything off, the motor coasts. Braking would push current
  * through the low sides of a driver that just reported a fault.
- * Any context, including the EXTI ISR: no logging, no FreeRTOS calls, no
- * critical section here. Task-side callers wrap it in taskENTER_CRITICAL(). */
+ * Called from the fault ISR and the tick: no logging, no FreeRTOS calls,
+ * no critical section here. */
 static void bridge_coast(void)
 {
     TIM1->CCR1 = 0;                 /* PWM low: LSA and LSB off */
@@ -135,10 +152,11 @@ static void bridge_coast(void)
     state = MOTOR_STATE_COAST;
 }
 
+/* Tick only: drive at duty_permille. Direction pins first, then the duty.
+ * The tick brakes first on a reversal. */
 static void motor_set(int16_t duty_permille)
 {
     duty = duty_permille;
-    /* Direction pins first, then the duty */
     if (duty_permille > 0) {
         HAL_GPIO_WritePin(MOTOR_INA_GPIO_Port, MOTOR_INA_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(MOTOR_INB_GPIO_Port, MOTOR_INB_Pin, GPIO_PIN_RESET);
@@ -152,6 +170,9 @@ static void motor_set(int16_t duty_permille)
     TIM1->CCR1 = (uint32_t)(abs(duty_permille) * (TIM1->ARR + 1) / 1000);
 }
 
+/* Tick only: extend the 16-bit TIM4 count. The signed difference handles
+ * the wrap in either direction while the counter moves < 32767 counts per
+ * tick (about 3 at full speed). */
 static void motor_update_position(void)
 {
     uint16_t now = (uint16_t)__HAL_TIM_GET_COUNTER(&htim4);
@@ -200,7 +221,8 @@ void motor_start(void)
     __HAL_GPIO_EXTI_CLEAR_IT(MOTOR_EN_Pin);
     HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
     en_release();
-    /* Start in brake state (the EXTI is live now, so take the lock) */
+    /* Start in brake. The lock masks the EXTI, which is live now; the tick
+     * doesn't touch the bridge until motor_started is set, last. */
     taskENTER_CRITICAL();
     bridge_brake();
     taskEXIT_CRITICAL();
@@ -278,6 +300,9 @@ bool motor_fault(void)
 
 bool motor_clear_fault(void)
 {
+    /* The lock masks the EXTI (NVIC 5), so a new fault can't land between
+     * the pin check and the clear. The tick only reads fault_latched, so it
+     * doesn't need masking. Post after the lock. */
     taskENTER_CRITICAL();
     if (en_state() != EN_ENABLED) {
         taskEXIT_CRITICAL();
@@ -308,24 +333,27 @@ void motor_get_status(motor_status_s *status)
     status->state = state;
 }
 
+/* Order matters: position first (every tick, even while faulted), then
+ * faults, then the running deadline, then new requests. */
 void motor_control_tick_handler(void)
 {
-    static uint8_t reversal_brake_ticks = 0;
+    static uint8_t reversal_brake_ticks = 0;  /* brake ticks left before a reversal */
 
     if (!motor_started) {
         return;
     }
 
-    /* Position Update */
     motor_update_position();
 
-    /* Poll for a fault - second line of defense to EN interrupt */
+    /* Backup fault check: catches a line that's low without an edge for the
+     * EXTI. motor_poll() logs it and posts the event. */
     if ((en_state() == EN_FAULT) && (!fault_latched)) {
         poll_fault_detected = true;
         fault_latched = true;
         fault_count++;
     }
-    /* Fault Responses */
+    /* Fault latched: hold coast and drop requests, so a run posted just
+     * before the fault never starts after the clear */
     if (fault_latched) {
         if (state != MOTOR_STATE_COAST) {
             bridge_coast();
@@ -334,7 +362,7 @@ void motor_control_tick_handler(void)
         return;
     }
 
-    /* Ongoing Activity */
+    /* Run deadline */
     if ((state == MOTOR_STATE_RUNNING_POS) || (state == MOTOR_STATE_RUNNING_NEG)) {
         run_ticks_remaining--;
         if (run_ticks_remaining == 0) {
@@ -343,21 +371,23 @@ void motor_control_tick_handler(void)
         }
     }
 
-    /* Request Handling */
+    /* New request */
     if (is_valid_new_request()) {
         switch (motor_request.type) {
             case MOTOR_REQUEST_RUN:
             {
-                /* Ignore run requests with duty == 0 */
+                /* Zero duty: drop it (motor_stop() is the way to stop) */
                 if (!motor_request.duty_permille) {
                     filter_request();
                     return;
                 }
                 motor_state_t req_state = motor_request.duty_permille > 0 ?
                     MOTOR_STATE_RUNNING_POS : MOTOR_STATE_RUNNING_NEG;
-                /* Upon a running reversal, brake the motor for REVERSAL_BRAKE_TICKS_DEFAULT ticks */
-                if ((state == MOTOR_STATE_RUNNING_POS) || (state == MOTOR_STATE_RUNNING_NEG)) { /* currently running */
-                    if (req_state != state) { /* reversal */
+                /* Reversal: brake for REVERSAL_BRAKE_TICKS_DEFAULT ticks first.
+                 * The RUN stays pending (not marked applied) and is applied
+                 * here once the count runs out. */
+                if ((state == MOTOR_STATE_RUNNING_POS) || (state == MOTOR_STATE_RUNNING_NEG)) {
+                    if (req_state != state) {
                         reversal_brake_ticks = REVERSAL_BRAKE_TICKS_DEFAULT;
                         bridge_brake();
                         return;
@@ -369,7 +399,6 @@ void motor_control_tick_handler(void)
                         }
                     }
                 }
-                /* Run the motor and update the state */
                 motor_set(motor_request.duty_permille);
                 run_ticks_remaining = motor_request.run_ticks;
                 state = req_state;
@@ -382,18 +411,21 @@ void motor_control_tick_handler(void)
                 }
                 break;
             case MOTOR_REQUEST_ZERO:
-                position = 0;
+                position = 0;   /* last_cnt was updated at the top of this tick */
                 break;
             default:
                 break;
         }
-        /* update the applied request id */
         motor_request_applied = motor_request_sequence;
     }
     return;
 }
 
-/* ISR context: safe the bridge first, then latch and tell the supervisor */
+/* EXTI context (NVIC 5). Latch first: the tick (NVIC 4) can interrupt
+ * between these lines, and it checks the latch before driving. Then coast.
+ * Count and post only on the first edge of a latch. If the tick's backup
+ * check latches between the read and the write below, one fault counts
+ * twice and posts twice; harmless. */
 static void motor_fault_isr(void)
 {
     BaseType_t woken = pdFALSE;
@@ -401,7 +433,6 @@ static void motor_fault_isr(void)
     bool was_fault_latched = fault_latched;
     fault_latched = true;
     bridge_coast();
-    /* filter additional fault triggers if latched */
     if (was_fault_latched) {
         return;
     }

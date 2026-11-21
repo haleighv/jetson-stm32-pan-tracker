@@ -1,8 +1,9 @@
 /*
  * control.h
  *
- * Motor control loop. For now it's the 1 kHz control tick on TIM6 and its
- * timing stats; encoder -> PID -> PWM moves in here later.
+ * Motor control loop: the 1 kHz control tick on TIM6, its timing stats,
+ * and the call into motor_control_tick_handler(), which owns the motor
+ * bridge and the encoder position. PID moves in here later.
  *
  * Notes:
  * - The tick runs in the TIM6 interrupt at NVIC priority 4, above the
