@@ -29,6 +29,7 @@ static volatile uint32_t period_max_cyc = 0;
 static volatile uint32_t period_min_tick;   /* tick_count when min was recorded */
 static volatile uint32_t period_max_tick;
 static volatile uint32_t tick_count = 0;
+static volatile uint32_t isr_max_cyc = 0;   /* longest pass through the ISR body */
 
 /* Written by tasks, read and cleared by the ISR */
 static volatile bool reset_requested = true;
@@ -55,6 +56,7 @@ static void control_tick_isr(TIM_HandleTypeDef *htim)
     if (reset_requested) {
         period_min_cyc  = UINT32_MAX;
         period_max_cyc  = 0;
+        isr_max_cyc     = 0;
         reset_requested = false;
     } else if (have_last) {
         if (period_cyc < period_min_cyc) {
@@ -78,6 +80,13 @@ static void control_tick_isr(TIM_HandleTypeDef *htim)
 
     /* Motor: requests, position, deadline, backup fault check */
     motor_control_tick_handler();
+
+    /* Time spent in here, from the period read at the top to now. Excludes
+     * interrupt entry and the HAL dispatch before this callback. */
+    uint32_t busy_cyc = DWT->CYCCNT - now_cyc;
+    if (busy_cyc > isr_max_cyc) {
+        isr_max_cyc = busy_cyc;
+    }
 }
 
 /* --- Public --- */
@@ -121,6 +130,11 @@ void control_get_period_ticks(uint32_t *min_tick, uint32_t *max_tick)
     }
     *min_tick = period_min_tick;
     *max_tick = period_max_tick;
+}
+
+uint32_t control_get_isr_max(void)
+{
+    return isr_max_cyc;
 }
 
 void control_reset_period(void)

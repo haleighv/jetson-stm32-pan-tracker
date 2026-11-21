@@ -225,6 +225,13 @@ static cli_status_t cmd_jitter(cli_s *cli, int argc, char **argv)
     cli_printf(cli, "min at %lu.%03lu s, max at %lu.%03lu s\r\n",
                (unsigned long)(min_tick / 1000U), (unsigned long)(min_tick % 1000U),
                (unsigned long)(max_tick / 1000U), (unsigned long)(max_tick % 1000U));
+
+    /* Time spent in the tick, worst case since the last clear */
+    uint32_t isr_cyc = control_get_isr_max();
+    uint32_t isr_ns  = (uint32_t)((uint64_t)isr_cyc * 1000U / mhz);
+    cli_printf(cli, "tick isr max %lu cycles (%lu.%03lu us)\r\n",
+               (unsigned long)isr_cyc, (unsigned long)(isr_ns / 1000U),
+               (unsigned long)(isr_ns % 1000U));
     return CLI_OK;
 }
 

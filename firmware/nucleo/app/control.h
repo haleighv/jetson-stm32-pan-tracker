@@ -42,8 +42,12 @@ void control_get_period(uint32_t *min_cyc, uint32_t *max_cyc);
  * and max were recorded. Useful for lining an outlier up with the log. */
 void control_get_period_ticks(uint32_t *min_tick, uint32_t *max_tick);
 
-/* Ask the ISR to restart min/max on its next tick. Only sets a flag, so
- * the ISR stays the only writer. */
+/* Longest time spent in the tick ISR body since the last reset, in CPU
+ * cycles. The time budget for the motor work (and PID later). */
+uint32_t control_get_isr_max(void);
+
+/* Ask the ISR to restart min/max and the ISR max on its next tick. Only
+ * sets a flag, so the ISR stays the only writer. */
 void control_reset_period(void);
 
 #ifdef __cplusplus
