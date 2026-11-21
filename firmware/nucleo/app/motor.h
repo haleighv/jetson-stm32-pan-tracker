@@ -52,6 +52,7 @@ extern "C" {
 #define MOTOR_DUTY_MAX       1000    /* permille */
 #define MOTOR_RUN_MS_DEFAULT 1000
 #define MOTOR_RUN_MS_MAX     5000
+#define MOTOR_LOG_DEPTH      2000    /* position log samples, 1 per ms */
 
 /* Bridge state, as last set by the tick (or the fault ISR for COAST) */
 typedef enum {
@@ -124,6 +125,19 @@ bool motor_clear_fault(void);
 
 /* Snapshot for the CLI. */
 void motor_get_status(motor_status_s *status);
+
+/* Log the next run: on the tick that applies it, the tick zeroes the
+ * position and logs it every tick for MOTOR_LOG_DEPTH ms (the run, then
+ * the brake). Call before motor_run(), so the tick can't miss it. */
+void motor_log_arm(void);
+
+/* Drop an arm that wasn't used, e.g. when motor_run() refused the run. */
+void motor_log_disarm(void);
+
+/* The position log, read-only: samples [0, *count) are valid, one per ms
+ * from the start of the run. Safe to read while logging; samples below
+ * the count never change. */
+const int16_t *motor_get_log(uint32_t *count);
 
 /* Control tick only (TIM6 ISR, 1 kHz, NVIC priority 4): no FreeRTOS calls.
  * Extends the position, runs the backup fault check, holds coast while

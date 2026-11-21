@@ -28,12 +28,19 @@ Results (12 V supply, no load):
 - The motor work costs about 2 µs of the 1,000 µs tick (0.2%), with no effect on jitter. Room for PID.
 - Captures: `docs/results/2026-11-20-motor-tick-pwm-encA-50-1000.csv`, `docs/results/2026-11-20-motor-reverse-pwm-encA-50-5000.csv`.
 
+Position log at 1 kHz:
+- `motor pwm <pct> <ms> log` arms a log before posting the run. On the tick that applies the run, the tick zeroes the position and logs it every tick for 2,000 samples (the run, then the brake). Tasks only set or clear the arm flag; the tick is the only writer of the log. Kept out of the request record on purpose.
+- `motor dump` prints the valid samples as CSV, one line per ms with a 1 ms delay per line so the log queue doesn't drop lines (2,000 lines in about 2 s).
+- 50% for 1,000 ms: 2,000 rows, none dropped. 1,339 counts/s steady, 90% of speed at 41 ms (same as 11-17's 42 ms), 1,315 counts at the brake, stopped at 1,332 by 1,030 ms.
+- First-order fit (speed rises as 1 - exp(-t/tau)): tau 17.5 ms, dead time about 0.5 ms, RMS error 0.38 counts over the run. The first count shows up at 7 ms only because the shaft moves less than one count before then, not a delay.
+- Log: `docs/results/2026-11-20-step-50.csv`.
+
 Code style:
 - Struct typedefs end in `_s`, enums and other typedefs keep `_t` (13 structs renamed, no behaviour change).
 
 Saved for next time:
 - Fault during a run on the tick version (EN to GND mid-run: coast, `fault_count` 1, `motor clear` refused until the jumper is off, then COAST -> BRAKE)
-- Position logging at 1 kHz, then a motor model fit (gain, dead band, time constant)
+- Steps at more duties (20, 30, 75, 100% and negative) for the gain and dead band fit; `tools/step_log.py` to capture them
 - A STOP during the 2-tick reversal brake leaves the countdown set (next start waits 1-2 ms extra). Clear it in the STOP case.
 - JLCPCB DFM / placement check in Order History
 - Shield bring-up when the boards arrive

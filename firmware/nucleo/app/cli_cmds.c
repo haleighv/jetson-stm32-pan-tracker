@@ -320,7 +320,7 @@ static const char * const motor_state_names[] = {
 
 static cli_status_t cmd_motor(cli_s *cli, int argc, char **argv)
 {
-    if ((argc == 3 || argc == 4) && strcmp(argv[1], "pwm") == 0) {
+    if ((argc == 3 || argc == 4 || argc == 5) && strcmp(argv[1], "pwm") == 0) {
         /* Duty in percent, -100..100 (sign = direction); the driver takes permille */
         char *end;
         long pct = strtol(argv[2], &end, 10);
@@ -328,13 +328,25 @@ static cli_status_t cmd_motor(cli_s *cli, int argc, char **argv)
             return CLI_ERR_ARGS;
         }
         unsigned long run_ms = 0;   /* 0 = MOTOR_RUN_MS_DEFAULT */
-        if (argc == 4) {
+        if (argc >= 4) {
             run_ms = strtoul(argv[3], &end, 10);
             if (*end != '\0' || argv[3][0] == '-' || run_ms == 0 || run_ms > MOTOR_RUN_MS_MAX) {
                 return CLI_ERR_ARGS;
             }
         }
+        /* Optional "log": zero and log this run (read with "motor dump") */
+        bool log = false;
+        if (argc == 5) {
+            if (strcmp(argv[4], "log") != 0) {
+                return CLI_ERR_ARGS;
+            }
+            log = true;
+            motor_log_arm();    /* before the run, so the tick can't miss it */
+        }
         if (!motor_run((int16_t)(pct * 10), (uint32_t)run_ms)) {
+            if (log) {
+                motor_log_disarm();
+            }
             cli_printf(cli, "motor pwm %ld%% refused (fault latched?)\r\n", pct);
         } else {
             cli_printf(cli, "motor pwm %ld%% for %lu ms\r\n", pct,
@@ -364,6 +376,19 @@ static cli_status_t cmd_motor(cli_s *cli, int argc, char **argv)
         return CLI_OK;
     }
 
+    /* Position log of the last "pwm ... log" run as CSV. One line per ms;
+     * the delay lets the log queue drain so no lines are dropped. */
+    if (argc == 2 && strcmp(argv[1], "dump") == 0) {
+        uint32_t count;
+        const int16_t *buf = motor_get_log(&count);
+        cli_printf(cli, "ms,position\r\n");
+        for (uint32_t i = 0; i < count; i++) {
+            cli_printf(cli, "%lu,%d\r\n", (unsigned long)i, buf[i]);
+            vTaskDelay(1);
+        }
+        return CLI_OK;
+    }
+
     if (argc != 1) {
         return CLI_ERR_ARGS;
     }
@@ -388,7 +413,7 @@ const cli_cmd_s cli_cmds[] = {
     { "jitter",      "jitter [clear]",                     "control tick timing (DWT)",          cmd_jitter      },
     { "led",         "led <1-3> <on|off|blink|fade> [ms]", "LED mode (1 green, 2 amber, 3 red)", cmd_led         },
     { "log_level",   "log_level [error|warn|info|debug]",  "show or set the log level",          cmd_loglevel    },
-    { "motor",       "motor [pwm <pct> [ms]|stop|zero|clear]", "motor status and open-loop runs", cmd_motor   },
+    { "motor",       "motor [pwm <pct> [ms [log]]|stop|zero|clear|dump]", "motor status and open-loop runs", cmd_motor   },
     { "msgs",        "msgs",                               "message bus counters",               cmd_msgs        },
     { "reset",       "reset",                              "software reset",                     cmd_reset       },
     { "state",       "state",                              "supervisor state and time in it",    cmd_state       },

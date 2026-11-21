@@ -54,6 +54,12 @@ static volatile bool          motor_started = false;   /* set last in motor_star
 static volatile bool          fault_latched;           /* set by the EXTI ISR or the tick's check, cleared by motor_clear_fault() */
 static volatile uint32_t      fault_count;
 
+/* Position log: one sample per tick, started by an armed run */
+static int16_t                log_buf[MOTOR_LOG_DEPTH]; /* tick writes, CLI reads after */
+static volatile uint32_t      log_count;               /* tick only writes: valid samples */
+static volatile bool          log_active;              /* tick only writes */
+static volatile bool          log_armed;               /* task sets, tick clears on the next RUN */
+
 /* Tick -> motor_poll() flags: the tick sets, motor_poll() acts then clears */
 static volatile bool          poll_fault_detected;     /* fault found by the tick's backup check */
 static volatile bool          run_complete = false;    /* run deadline reached */
@@ -178,6 +184,40 @@ static void motor_update_position(void)
     uint16_t now = (uint16_t)__HAL_TIM_GET_COUNTER(&htim4);
     position += (int16_t)(now - last_cnt);
     last_cnt = now;
+}
+
+/* Tick only: one sample per tick until the buffer is full. Keeps going
+ * after the run ends, so the log also shows the brake and the settle.
+ * int16_t fits: the log starts from 0 and the longest run is 5 s (about
+ * 13,800 counts at full duty). */
+static void log_sample(void)
+{
+    if (!log_active) {
+        return;
+    }
+    log_buf[log_count] = (int16_t)position;
+    log_count++;
+    if (log_count >= MOTOR_LOG_DEPTH) {
+        log_active = false;
+    }
+}
+
+void motor_log_arm(void)
+{
+    log_armed = true;
+}
+
+void motor_log_disarm(void)
+{
+    log_armed = false;
+}
+
+const int16_t *motor_get_log(uint32_t *count)
+{
+    if (count) {
+        *count = log_count;
+    }
+    return log_buf;
 }
 
 void motor_start(void)
@@ -335,13 +375,9 @@ void motor_get_status(motor_status_s *status)
 
 /* Order matters: position first (every tick, even while faulted), then
  * faults, then the running deadline, then new requests. */
-void motor_control_tick_handler(void)
+static void motor_tick_work(void)
 {
     static uint8_t reversal_brake_ticks = 0;  /* brake ticks left before a reversal */
-
-    if (!motor_started) {
-        return;
-    }
 
     motor_update_position();
 
@@ -399,26 +435,47 @@ void motor_control_tick_handler(void)
                         }
                     }
                 }
+                /* Armed log: zero and start logging on the tick the run
+                 * starts, so sample 0 is the first driven tick */
+                if (log_armed) {
+                    log_armed  = false;
+                    position   = 0;     /* last_cnt was updated at the top of this tick */
+                    log_count  = 0;
+                    log_active = true;
+                }
                 motor_set(motor_request.duty_permille);
                 run_ticks_remaining = motor_request.run_ticks;
                 state = req_state;
                 break;
             }
             case MOTOR_REQUEST_STOP:
+            {
                 run_ticks_remaining = 0;
                 if (state != MOTOR_STATE_BRAKE) {
                     bridge_brake();
                 }
                 break;
+            }
             case MOTOR_REQUEST_ZERO:
+            {
                 position = 0;   /* last_cnt was updated at the top of this tick */
                 break;
+            }
             default:
                 break;
         }
         motor_request_applied = motor_request_sequence;
     }
     return;
+}
+
+void motor_control_tick_handler(void)
+{
+    if (!motor_started) {
+        return;
+    }
+    motor_tick_work();
+    log_sample();   /* last: sees the position after this tick's request */
 }
 
 /* EXTI context (NVIC 5). Latch first: the tick (NVIC 4) can interrupt
@@ -462,4 +519,3 @@ void EXTI15_10_IRQHandler(void)
         }
     }
 }
-
