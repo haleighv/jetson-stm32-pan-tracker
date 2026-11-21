@@ -1,0 +1,182 @@
+{
+  "info": {
+    "when": "2026-11-20T183641",
+    "run_ms": 1000,
+    "port": "/dev/cu.usbmodem131403",
+    "host_git": "089da03-dirty",
+    "version": "0.1.0 (v0.1.0-53-gf4dfd63-dirty) Debug, built Nov 20 2026 18:17:55"
+  },
+  "idle_jitter": {
+    "period_min_cyc": 519962,
+    "period_max_cyc": 520014,
+    "ideal_cyc": 520000,
+    "early_ns": -73,
+    "late_ns": 26,
+    "isr_max_cyc": 675,
+    "isr_max_us": 1.298
+  },
+  "run_jitter": {},
+  "steps": {
+    "10": {
+      "final_counts": 142,
+      "steady_cps": 144.0,
+      "first_count_ms": 11,
+      "t90_ms": 36,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 19.5,
+      "fit_rms_counts": 0.49,
+      "brake_seen_ms": 1012,
+      "coast_counts": 1,
+      "stopped_ms_after_run": 7,
+      "current_ma": 323
+    },
+    "15": {
+      "final_counts": 289,
+      "steady_cps": 292.0,
+      "first_count_ms": 16,
+      "t90_ms": 30,
+      "fit_dead_ms": 3.5,
+      "fit_tau_ms": 19.5,
+      "fit_rms_counts": 0.33,
+      "brake_seen_ms": 1009,
+      "coast_counts": 4,
+      "stopped_ms_after_run": 17,
+      "current_ma": 369
+    },
+    "20": {
+      "final_counts": 437,
+      "steady_cps": 442.0,
+      "first_count_ms": 9,
+      "t90_ms": 22,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 22.0,
+      "fit_rms_counts": 0.52,
+      "brake_seen_ms": 1009,
+      "coast_counts": 5,
+      "stopped_ms_after_run": 19,
+      "current_ma": 335
+    },
+    "30": {
+      "final_counts": 734,
+      "steady_cps": 738.0,
+      "first_count_ms": 8,
+      "t90_ms": 34,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 19.0,
+      "fit_rms_counts": 0.36,
+      "brake_seen_ms": 1011,
+      "coast_counts": 10,
+      "stopped_ms_after_run": 42,
+      "current_ma": 366
+    },
+    "50": {
+      "final_counts": 1325,
+      "steady_cps": 1332.0,
+      "first_count_ms": 7,
+      "t90_ms": 34,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 18.5,
+      "fit_rms_counts": 0.49,
+      "brake_seen_ms": 1012,
+      "coast_counts": 18,
+      "stopped_ms_after_run": 40,
+      "current_ma": 471
+    },
+    "75": {
+      "final_counts": 2048,
+      "steady_cps": 2072.0,
+      "first_count_ms": 6,
+      "t90_ms": 47,
+      "fit_dead_ms": 1.5,
+      "fit_tau_ms": 23.5,
+      "fit_rms_counts": 0.89,
+      "brake_seen_ms": 1012,
+      "coast_counts": 28,
+      "stopped_ms_after_run": 40,
+      "current_ma": 530
+    },
+    "100": {
+      "final_counts": 2684,
+      "steady_cps": 2738.0,
+      "first_count_ms": 6,
+      "t90_ms": 65,
+      "fit_dead_ms": 8.0,
+      "fit_tau_ms": 25.5,
+      "fit_rms_counts": 0.79,
+      "brake_seen_ms": 1012,
+      "coast_counts": 38,
+      "stopped_ms_after_run": 42,
+      "current_ma": 590
+    },
+    "-10": {
+      "final_counts": -118,
+      "steady_cps": -124.0,
+      "first_count_ms": 16,
+      "t90_ms": 30,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 39.5,
+      "fit_rms_counts": 1.97,
+      "brake_seen_ms": 1013,
+      "coast_counts": -1,
+      "stopped_ms_after_run": 8,
+      "current_ma": 319
+    },
+    "-15": {
+      "final_counts": -273,
+      "steady_cps": -280.0,
+      "first_count_ms": 15,
+      "t90_ms": 31,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 31.5,
+      "fit_rms_counts": 0.67,
+      "brake_seen_ms": 1005,
+      "coast_counts": -2,
+      "stopped_ms_after_run": 11,
+      "current_ma": 402
+    },
+    "-20": {
+      "final_counts": -427,
+      "steady_cps": -430.0,
+      "first_count_ms": 5,
+      "t90_ms": 24,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 18.5,
+      "fit_rms_counts": 0.37,
+      "brake_seen_ms": 1008,
+      "coast_counts": -5,
+      "stopped_ms_after_run": 15,
+      "current_ma": 419
+    },
+    "-30": {
+      "final_counts": -725,
+      "steady_cps": -732.0,
+      "first_count_ms": 8,
+      "t90_ms": 38,
+      "fit_dead_ms": 0.0,
+      "fit_tau_ms": 21.5,
+      "fit_rms_counts": 0.65,
+      "brake_seen_ms": 1011,
+      "coast_counts": -9,
+      "stopped_ms_after_run": 26,
+      "current_ma": 411
+    }
+  },
+  "model": {
+    "positive": {
+      "K_cps_per_pct": 29.03,
+      "d0_pct": 4.68,
+      "points": 7,
+      "max_resid_cps": 30.5
+    },
+    "negative": {
+      "K_cps_per_pct": 30.34,
+      "d0_pct": 5.85,
+      "points": 4,
+      "max_resid_cps": 2.3
+    }
+  },
+  "reversal": null,
+  "problems": [
+    "no prompt, got b',-1318\\r\\n1948,-1318\\r\\n1951,-1318\\r\\n1954,-1318\\r\\n1958,-1318\\r\\n1961,-1318\\r\\n1964,-1318\\r\\n1968,-1318\\r\\n1971,-1318\\r\\n1974,-1318\\r\\n1978,-1318\\r\\n1981,-1318\\r\\n1984,-1318\\r\\n1987,-1318\\r\\n1991,-1318\\r\\n1994,-1318\\r\\n1997,-1318\\r\\n'"
+  ]
+}

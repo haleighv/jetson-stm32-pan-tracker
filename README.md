@@ -87,7 +87,8 @@ Needs cmake, ninja, Arm GNU Toolchain (`arm-none-eabi-gcc`), and STM32CubeProgra
 ```
 ./firmware/scripts/test.sh            # host unit tests (PID, CLI, LED fade)
 ./firmware/scripts/flash.sh           # build + flash the Nucleo over ST-LINK
-screen /dev/cu.usbmodem* 115200       # logs + CLI, type ? for commands
+tio -b 1000000 /dev/cu.usbmodem*      # logs + CLI at 1 Mbaud, type ? for commands
+python3 tools/motor_profile.py        # motor characterization suite (quit tio first)
 ```
 
 CI (`.github/workflows/ci.yml`) runs the host tests and builds the firmware on every push to `mainline` and every PR. Each run keeps `nucleo.elf` and `nucleo.map` as a download. To flash one:

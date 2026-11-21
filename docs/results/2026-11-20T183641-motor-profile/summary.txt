@@ -1,0 +1,28 @@
+Motor profile, 2026-11-20T183641
+firmware: 0.1.0 (v0.1.0-53-gf4dfd63-dirty) Debug, built Nov 20 2026 18:17:55
+host repo: 089da03-dirty
+
+Tick timing
+  idle           jitter -73 / +26 ns, ISR max 1.298 us
+  motor running  jitter - / +- ns, ISR max - us
+
+Steps (run 1000 ms)
+   duty  counts/s  t90 ms  dead ms  tau ms   rms  brake ms  coast     mA  note
+    10%     144.0      36      0.0    19.5  0.49      1012      1    323  
+    15%     292.0      30      3.5    19.5  0.33      1009      4    369  
+    20%     442.0      22      0.0    22.0  0.52      1009      5    335  
+    30%     738.0      34      0.0    19.0  0.36      1011     10    366  
+    50%    1332.0      34      0.0    18.5  0.49      1012     18    471  
+    75%    2072.0      47      1.5    23.5  0.89      1012     28    530  
+   100%    2738.0      65      8.0    25.5  0.79      1012     38    590  
+   -10%    -124.0      30      0.0    39.5  1.97      1013     -1    319  
+   -15%    -280.0      31      0.0    31.5  0.67      1005     -2    402  
+   -20%    -430.0      24      0.0    18.5  0.37      1008     -5    419  
+   -30%    -732.0      38      0.0    21.5  0.65      1011     -9    411  
+
+Model: speed = K * (duty - d0), fitted per direction over steps that moved
+  positive K 29.03 counts/s per %, d0 4.68%, 7 points, worst residual 30.5 counts/s
+  negative K 30.34 counts/s per %, d0 5.85%, 4 points, worst residual 2.3 counts/s
+
+Problems
+  no prompt, got b',-1318\r\n1948,-1318\r\n1951,-1318\r\n1954,-1318\r\n1958,-1318\r\n1961,-1318\r\n1964,-1318\r\n1968,-1318\r\n1971,-1318\r\n1974,-1318\r\n1978,-1318\r\n1981,-1318\r\n1984,-1318\r\n1987,-1318\r\n1991,-1318\r\n1994,-1318\r\n1997,-1318\r\n'

@@ -17,7 +17,7 @@ STM32H723 (NUCLEO-H723ZG) firmware for the pan axis. Skeleton from [plan.md](pla
 | Motor current | ADC3_INP9 | PF4 (CN10-7) | VNH5019 CS ~140 mV/A, 1 kΩ + 100 nF filter. Only valid while driving. ADC clock PLL2P 96 MHz / 8, 92.5-cycle sampling. Reads 8-19% high vs the supply at 0.5 A, inside the VNH5019 sense ratio spread: good for relative and stall checks, not absolute current. Working |
 | CAN | FDCAN1, classic 2.0A, 1 Mbps | PD0 (RX), PD1 (TX) | external transceiver. Kernel 130 MHz (PLL1Q), prescaler 5, 26 tq, 80.8% sample point, SJW 5. Normal mode, on the bus with the Jetson (J17) |
 | Telemetry | ETH (RMII) | on-board PHY | |
-| Console/log | USART3, 115200 8N1 | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
+| Console/log | USART3, 1,000,000 8N1 (130 MHz kernel clock / 130, exact) | PD8 (TX), PD9 (RX) | ST-LINK virtual COM |
 | E-stop input | GPIO/EXTI | TBD | |
 | Status LEDs | GPIO | PB0, PE1, PB14 | LD1 green, LD2 amber, LD3 red. Only the LED task drives them. Red is for the supervisor. |
 | Scope/debug pin | GPIO | PG14 (Arduino D2) | timing measurements |

@@ -35,12 +35,45 @@ Position log at 1 kHz:
 - First-order fit (speed rises as 1 - exp(-t/tau)): tau 17.5 ms, dead time about 0.5 ms, RMS error 0.38 counts over the run. The first count shows up at 7 ms only because the shaft moves less than one count before then, not a delay.
 - Log: `docs/results/2026-11-20-step-50.csv`.
 
+First motor profile (`tools/motor_profile.py`, `docs/results/2026-11-20T183641-motor-profile/`):
+- Steps up to +-30% and +50 to +100% logged cleanly. It stopped at -50%: that dump lost lines and its prompt. At 115,200 baud the UART moves about 11.5 bytes per ms; `motor dump` printed one line per ms, and a negative line (`1999,-1318\r\n`, 12 bytes) is just over that, so the 32-message log queue backed up and overflowed near the end. Positive and small negative values have shorter lines and kept up.
+- Fixes: `motor dump` now waits for the log task (`log_flush()`) every 16 lines, so no more than half the queue is ever in flight; the console runs at 1,000,000 baud (130 MHz USART kernel clock / 130, exact; the ST-LINK V3 virtual COM port handles it); the tools retry a bad dump (the log stays on the board), check the board's dropped count around each dump, and carry on past a failed test instead of stopping the suite.
+- Results from the steps that completed (12 V bench supply, no load):
+
+| | Positive | Negative (10-30% only) |
+|---|---|---|
+| Gain K | 29.0 counts/s per % | 30.3 counts/s per % |
+| Dead band d0 while moving | 4.7% | 5.9% |
+| Worst fit residual | 30.5 counts/s | 2.3 counts/s |
+
+- The moving dead band (about 5-6%) is below the 7-10% needed to start from rest (11-17): static vs kinetic friction, which friction feed-forward will need to handle. 10% moves (144 counts/s) but fits worst.
+- Time constant 18.5-22 ms up to 50%, then 23.5 ms at 75% and 25.5 ms at 100% with 8 ms of dead time and 65 ms to 90% speed. Either supply sag at start-up current or the motor isn't first-order at high speed: check the supply's current limit and the 12 V on a scope during a 100% start before tuning on high-duty data.
+- Coast after the brake scales with speed: 1 count at 10% to 38 at 100%. Current 320-590 mA from 10% to 100% (single samples, rough).
+
+Full motor profile after the fixes (1 Mbaud, `docs/results/2026-11-20T184941-motor-profile/`): all 14 steps and the reversal, no problems.
+
+| | Positive | Negative |
+|---|---|---|
+| Gain K | 28.98 counts/s per % | 29.28 counts/s per % |
+| Dead band d0 while moving | 4.64% | 5.35% |
+| Speed at 50% / 100% | 1,330 / 2,736 counts/s | -1,320 / -2,740 counts/s |
+| Time constant, 30-50% | 19-19.5 ms | 19-19.5 ms |
+| Time constant, 100% | 26 ms, 5.5 ms dead time | 27 ms, 5.5 ms dead time |
+
+- Repeatable: within 1% of the first run at every duty that ran both times. The two directions agree within about 1% in gain.
+- Speed is slightly under the straight line at high duty (worst residual about 30 counts/s), and the slower rise above 75% shows in both directions, so it's the drive or the supply, not one direction's friction.
+- 10% doesn't fit a first-order model (tau 10-44 ms, dead time up to 10 ms): friction dominates there. Treat 15% and up as the linear range.
+- Reversal 50% to -50%: 1,330 counts/s both ways, 90% of reverse speed 40 ms after the turnaround (34-36 ms from rest).
+- Tick: ISR max 2.64 us with the motor running and the log sampling (2.0 us before the log), jitter -126 / +126 ns. Idle 1.24 us.
+- Starting point for the velocity loop: K about 29 counts/s per %, d0 about 5% moving (7-10% to break away from rest), tau about 20 ms.
+
 Code style:
 - Struct typedefs end in `_s`, enums and other typedefs keep `_t` (13 structs renamed, no behaviour change).
 
 Saved for next time:
 - Fault during a run on the tick version (EN to GND mid-run: coast, `fault_count` 1, `motor clear` refused until the jumper is off, then COAST -> BRAKE)
-- Steps at more duties (20, 30, 75, 100% and negative) for the gain and dead band fit; `tools/step_log.py` to capture them
+- Rerun the profile on the tagged v0.2.0 build, so a profile matches an exact commit
+- 12 V on a scope during a 100% start: supply sag or motor behaviour?
 - A STOP during the 2-tick reversal brake leaves the countdown set (next start waits 1-2 ms extra). Clear it in the STOP case.
 - JLCPCB DFM / placement check in Order History
 - Shield bring-up when the boards arrive
