@@ -30,11 +30,11 @@ Ordered most urgent first. Safety beats comms beats observability beats debug: i
 
 | Context | Type | Rate | Priority | Does | Talks to |
 |---|---|---|---|---|---|
-| control | TIM6 ISR | 1 kHz | NVIC 4 (above the syscall limit, no FreeRTOS calls) | encoder -> PID -> PWM, current check, push telemetry sample. Today: tick count, DWT period stats, scope pin | supervisor, telemetry (variables, single writer) |
+| control | TIM6 ISR | 1 kHz | NVIC 4 (above the syscall limit, no FreeRTOS calls) | encoder -> PID -> PWM, current check, push telemetry sample. Today: tick count, DWT period and ISR-time stats, scope pin, and `motor_control_tick_handler()`: the only writer of the bridge and the encoder position (applies task requests, extends the position, counts down the run, backup fault check). Max ~2 µs | supervisor, telemetry (variables, single writer) |
 | estop | EXTI ISR | event | TBD | PWM off, latch fault | supervisor |
-| motor fault | EXTI13 ISR (EN/DIAG low) | event | NVIC 5 | coast the bridge, latch, post `EVENT_MOTOR_FAULT` once per latch (a bouncing line re-safes but doesn't re-count) | supervisor |
+| motor fault | EXTI13 ISR (EN/DIAG low) | event | NVIC 5 | latch first, then coast (the tick can interrupt it and checks the latch before driving), post `EVENT_MOTOR_FAULT` once per latch (a bouncing line re-safes but doesn't re-count) | supervisor |
 | msg | task (dispatcher) | event | SUMMIT | copy each posted message to its subscribers | everyone (bus) |
-| supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG. Today also `motor_poll()` every 10 ms: run deadline, encoder extension, fault-line backup (moving to the control tick) | all (bus), led |
+| supervisor | task | ~100 Hz | HIGH | startup order, state machine, heartbeat timeout, control-loop liveness, IWDG. Today also `motor_poll()` every 10 ms: logs what the tick flags (run finished, fault found by its backup check) and posts the fault event | all (bus), led |
 | host_comms | task | event (CAN RX) + periodic status TX | NORMAL | setpoints + heartbeat from Jetson, status back | supervisor, control |
 | telemetry | task | batches of 1 kHz samples | NORMAL | pack samples, send UDP | control |
 | Tmr Svc | FreeRTOS timer task | event | 2 (same as NORMAL) | runs software timer callbacks (LED blink/fade) | led |
@@ -55,7 +55,7 @@ Status: init, log, cli, msg, led, supervisor, control tick running. Motor runs o
 - Task names stay under 16 chars (`configMAX_TASK_NAME_LEN`).
 
 Open questions:
-- TBD: how control shares data with tasks without FreeRTOS calls (once it runs above the syscall priority)
+- Decided: control shares data with tasks through single-writer variables. Tasks send commands through a request record with a sequence counter (odd while written, the tick applies each new even value once). The tick hands events back as flags the supervisor reads and clears. See `motor.c`.
 - TBD: stack sizes, measured with the CLI `tasks` command (stack high-water marks)
 - TBD: does the supervisor create host_comms/telemetry after hardware init, instead of init creating everything
 
@@ -108,7 +108,7 @@ Rules:
 | 4 | TIM6 (control tick) | no |
 | TBD (0-4) | e-stop | no |
 | 5 | configMAX_SYSCALL_INTERRUPT_PRIORITY: FreeRTOS critical sections mask 5-15 (BASEPRI) | - |
-| 5 | EXTI15_10 (motor EN/DIAG fault, PE13) | yes (FromISR). Masked by task critical sections, which is what keeps a fault from landing mid-update in `motor_set()`/`motor_clear_fault()` |
+| 5 | EXTI15_10 (motor EN/DIAG fault, PE13) | yes (FromISR). Masked by task critical sections, which keeps a fault from landing between the pin check and the clear in `motor_clear_fault()`. Not above the tick: the tick can interrupt it, so it latches before it coasts |
 | 6 | USART3 (CLI RX) | yes (FromISR) |
 | 6 | FDCAN1 interrupt 0 (RX FIFO0) | yes (FromISR) |
 | TBD (5+) | ETH | yes (FromISR) |

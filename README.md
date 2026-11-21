@@ -26,6 +26,7 @@ Safety:
 - [x] CI: host tests + firmware build on every push, elf/map kept per commit
 - [x] CAN bus to the Jetson at 1 Mbps: both directions, 0 errors
 - [x] Motor open loop: VNH5019 driver, encoder, current sense, latched fault interrupt, brake on stop (220 RPM at full duty, stops in ~37 ms)
+- [x] Motor driven from the 1 kHz control tick: single writer, lock-free task requests, 2 ms reversal brake, ~2 µs per tick
 - [x] Custom Nucleo shield (Nuc-hatch rev A): designed in KiCad, ordered assembled from JLCPCB
 - [ ] Motor closed loop: velocity and position
 - [ ] Safety: e-stop, heartbeat, watchdog

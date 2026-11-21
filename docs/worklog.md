@@ -2,6 +2,44 @@
 
 A rolling log for the project's work.
 
+## 2026-11-20
+Motor work moved into the 1 kHz control tick:
+- `motor_control_tick_handler()`, called from the TIM6 ISR (NVIC 4), is now the only writer of the bridge (INA, INB, CCR1) and the encoder position. Before, the CLI task, the supervisor and the fault ISR all wrote the bridge, and a FreeRTOS critical section can't keep the tick out of that.
+- Tasks post requests (run, stop, zero) through a record with a sequence counter: odd while a task writes it, even when done. The tick skips odd values and applies each new even value once, so it never sees a half-written record. The critical section only serializes tasks against each other. `__DMB()` stops the compiler moving the field writes past the counter. The newest request wins.
+- Tick order: extend the position, backup fault check, hold coast and drop requests while latched, count down the run, apply a new request. The deadline is counted in ticks (no `xTaskGetTickCount()` above the syscall priority).
+- Reversal: brake for 2 ticks, with the RUN left pending, then the new direction. Waiting is a tick countdown, never a delay.
+- Faults: the EXTI ISR (NVIC 5) latches first, then coasts. The tick can interrupt it, and it checks the latch before driving. The tick's own check is the backup for a line that's low with no edge. `motor clear` checks the pin and clears the latch under a critical section (masks the EXTI), then posts a stop so the tick brakes from coast.
+- `motor_poll()` now only reports the tick's flags: logs the end of a run, and logs and posts `EVENT_MOTOR_FAULT` for a fault the tick's check found.
+- `motor_started` is set last in `motor_start()` and gates the handler. The supervisor starts the tick before the motor, so without it the tick read EN before the driver was set up.
+- EN/DIAG as one state from ODR and IDR: enabled, fault, disabled (we drive it low), stuck high (we drive low, reads high: wiring fault). One helper for the ISR, the backup check and `motor clear`. "Not faulted" isn't the same as "enabled": the earlier two-way check let `motor clear` pass with EN driven low.
+- `motor` status shows the bridge state (BRAKE, RUNNING_POS/NEG, COAST) instead of a run flag.
+- Bugs found in review before testing: a `uint8_t` brake countdown that wrapped 0 -> 255 and delayed every start from brake by about 255 ms; a reversal check that tested NEG twice, so positive to negative skipped the brake; a fault found by the tick's check that wasn't coasted until the next tick, so a pending run could drive a faulted driver for 1 ms.
+- `jitter` now also prints the longest time spent in the tick ISR (DWT, `jitter clear` resets it).
+
+Results (12 V supply, no load):
+
+| Test | Result |
+|---|---|
+| `motor pwm 50 1000`, then `-50 1000` | +1,319 counts, then back to -4 (symmetric within 0.3%) |
+| 50% for 1,000 ms, Saleae | run 999.97 ms (20,000 PWM periods; 1,001.1 ms on 11-17 from the 10 ms poll), PWM 20.000 kHz, 50.02%, 1,335 counts/s steady, last ENC A edge 29 ms after the brake |
+| 100% for 3,000 ms | tick ISR max 2.0 µs (1,044 cycles), jitter -107 / +69 ns |
+| 50%, then -50% mid-run | brake 2.025 ms (PWM held high), then the full 5,000 ms in reverse. 1,360 and 1,344 counts/s. Shaft turns around about 10-20 ms after the brake, full speed in about 50 ms. ISR max 1.95 µs. Worst jitter -144 / +113 ns, on the reversal tick |
+
+- The motor work costs about 2 µs of the 1,000 µs tick (0.2%), with no effect on jitter. Room for PID.
+- Captures: `docs/results/2026-11-20-motor-tick-pwm-encA-50-1000.csv`, `docs/results/2026-11-20-motor-reverse-pwm-encA-50-5000.csv`.
+
+Code style:
+- Struct typedefs end in `_s`, enums and other typedefs keep `_t` (13 structs renamed, no behaviour change).
+
+Saved for next time:
+- Fault during a run on the tick version (EN to GND mid-run: coast, `fault_count` 1, `motor clear` refused until the jumper is off, then COAST -> BRAKE)
+- Position logging at 1 kHz, then a motor model fit (gain, dead band, time constant)
+- A STOP during the 2-tick reversal brake leaves the countdown set (next start waits 1-2 ms extra). Clear it in the STOP case.
+- JLCPCB DFM / placement check in Order History
+- Shield bring-up when the boards arrive
+- Firmware for the new inputs: HOME, END+/-, AUX, ESTOP
+- `can test 10000` with the Jetson on the new clock
+
 ## 2026-11-18
 Nuc-hatch shield, rev A (`hardware/shield/`):
 - Custom shield for the Nucleo to replace the proto-board jumper hub. CAN module socket, VNH5019 and encoder headers, HOME/END+/END-/AUX sensor inputs, an NC e-stop, and a 2x15 breakout with a shunt per signal so any device can be cut off and probed from either side.
