@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.9"
+# dependencies = ["pyserial"]
+# ///
 """
 clock_drift.py
 
@@ -16,9 +20,10 @@ The laptop clock is NTP-disciplined (a few ppm at worst), and uptime has
 1 ms resolution, so a 5 minute run resolves well under 10 ppm. 0.5% is
 5000 ppm.
 
-Usage:
-    python3 tools/clock_drift.py -p /dev/cu.usbmodem1103
-    python3 tools/clock_drift.py -p /dev/cu.usbmodem1103 -d 600 -i 5
+Usage (uv installs pyserial on first run, no venv needed):
+    tools/clock_drift.py                 (pick the port from a list)
+    tools/clock_drift.py -p /dev/cu.usbmodem1103 -d 600 -i 5
+    uv run tools/clock_drift.py          (same thing)
 
 Author: Haleigh (haleighv)
 Copyright (c) 2026 haleighv
@@ -30,6 +35,9 @@ import sys
 import time
 
 import serial
+
+from nucleo_cli import BAUD
+from serial_pick import pick_port
 
 PROMPT = b"> "
 UPTIME = re.compile(r"^(\d+)\.(\d{3}) s\s*$", re.M)
@@ -71,13 +79,14 @@ def fit(xs, ys):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[1])
-    ap.add_argument("-p", "--port", required=True)
-    ap.add_argument("-b", "--baud", type=int, default=115200)
+    ap.add_argument("-p", "--port", help="serial port (default: pick from a list)")
+    ap.add_argument("-b", "--baud", type=int, default=BAUD)
     ap.add_argument("-d", "--duration", type=float, default=300, help="seconds (default 300)")
     ap.add_argument("-i", "--interval", type=float, default=10, help="seconds between samples (default 10)")
     args = ap.parse_args()
 
-    ser = serial.Serial(args.port, args.baud, timeout=0.1)
+    port = args.port or pick_port()
+    ser = serial.Serial(port, args.baud, timeout=0.1)
     ser.write(b"\r")
     read_until_prompt(ser)
 
