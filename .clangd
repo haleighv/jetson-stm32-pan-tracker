@@ -1,0 +1,10 @@
+# clangd settings for this repo (used by the STM32 VS Code extension).
+# The firmware is C: stop completions from adding includes such as
+# <cstdint>, and parse headers as C instead of guessing C++.
+Completion:
+  HeaderInsertion: Never
+---
+If:
+  PathMatch: .*\.h
+CompileFlags:
+  Add: [-xc-header]
