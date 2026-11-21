@@ -376,15 +376,21 @@ static cli_status_t cmd_motor(cli_s *cli, int argc, char **argv)
         return CLI_OK;
     }
 
-    /* Position log of the last "pwm ... log" run as CSV. One line per ms;
-     * the delay lets the log queue drain so no lines are dropped. */
+    /* Position log of the last "pwm ... log" run as CSV. Output goes through
+     * the log queue (LOG_QUEUE_DEPTH 32), which drops when full, and the UART
+     * drains it slower than this loop fills it. So every DUMP_FLUSH_LINES
+     * lines, wait for the log task to write everything queued: never more
+     * than half the queue in flight, nothing dropped, as fast as the UART. */
     if (argc == 2 && strcmp(argv[1], "dump") == 0) {
+        enum { DUMP_FLUSH_LINES = LOG_QUEUE_DEPTH / 2 };
         uint32_t count;
         const int16_t *buf = motor_get_log(&count);
         cli_printf(cli, "ms,position\r\n");
         for (uint32_t i = 0; i < count; i++) {
             cli_printf(cli, "%lu,%d\r\n", (unsigned long)i, buf[i]);
-            vTaskDelay(1);
+            if ((i % DUMP_FLUSH_LINES) == DUMP_FLUSH_LINES - 1) {
+                log_flush();
+            }
         }
         return CLI_OK;
     }

@@ -25,7 +25,7 @@ set(CMAKE_PROJECT_NAME nucleo)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Core project settings
-project(${CMAKE_PROJECT_NAME} VERSION 0.1.0)
+project(${CMAKE_PROJECT_NAME} VERSION 0.2.0)
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
